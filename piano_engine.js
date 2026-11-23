@@ -40,6 +40,18 @@
   if (currentFirefoxVersion < 92) {
     throw new Error(`This emscripten-generated code requires Firefox v92 (detected v${currentFirefoxVersion})`);
   }
+  const keyMap = {
+  "KeyA": 60,      // Bấm phím A -> Đánh nốt C4 (mã MIDI 60)
+  "KeyS": 62,      // Bấm phím S -> Đánh nốt D4 (mã MIDI 62)
+  "KeyD": 64,      // Bấm phím D -> Đánh nốt E4 (mã MIDI 64)
+  "KeyF": 65,      // Bấm phím F -> Đánh nốt F4 (mã MIDI 65)
+  "KeyG": 67,      // Bấm phím G -> Đánh nốt G4 (mã MIDI 67)
+  "KeyH": 69,      // Bấm phím H -> Đánh nốt A4 (mã MIDI 69)
+  "KeyJ": 71,      // Bấm phím J -> Đánh nốt B4 (mã MIDI 71)
+  "KeyK": 72,      // Bấm phím K -> Đánh nốt C5 (mã MIDI 72)
+  "KeyL": 74,      // Bấm phím L -> Đánh nốt D5 (mã MIDI 74)
+  "Semicolon": 76  // Bấm phím ; -> Đánh nốt E5 (mã MIDI 76)
+};
 
   const currentChromeVersion = userAgent.match(/Chrome\/(\d+(?:\.\d+)?)/) ? parseFloat(userAgent.match(/Chrome\/(\d+(?:\.\d+)?)/)[1]) : TARGET_NOT_SUPPORTED;
   if (currentChromeVersion < 93) {
