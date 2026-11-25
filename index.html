@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pianixt</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1e1e2e; color: #cdd6f4; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; user-select: none; padding: 20px; box-sizing: border-box; }
+        .dashboard { background: #5158b1; padding: 20px 28px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 100%; max-width: 780px; box-sizing: border-box; }
+        .stats { display: flex; justify-content: space-around; margin-top: 10px; font-size: 1.05rem; color: #f9e2af; gap: 16px; flex-wrap: wrap; }
+        .target-note { font-size: 1.8rem; font-weight: bold; color: #080f08; margin: 10px 0; }
+        .progress { height: 8px; background: #11111b; border-radius: 4px; overflow: hidden; margin-top: 12px; }
+        .progress > div { height: 100%; width: 0; background: #89b4fa; transition: width 0.15s; }
+        .kb-info { font-size: 0.8rem; color: #9399b2; margin-top: 8px; }
+
+        .upload-section { background: #000000; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #585b70; }
+        .btn { background: #89b4fa; color: #11111b; border: none; padding: 9px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-block; margin: 6px 4px 0; font-size: 0.9rem; }
+        .btn:hover { background: #b4befe; }
+        .btn.secondary { background: #45475a; color: #cdd6f4; }
+        .btn.secondary:hover { background: #585b70; }
+        .btn.go { background: #a6e3a1; }
+        .btn.go:hover { background: #c3f0be; }
+        .btn:disabled { opacity: 0.5; cursor: wait; }
+        input[type="file"] { display: none; }
+        audio { width: 100%; margin-top: 12px; height: 36px; display: none; }
+        .song-info { font-size: 0.95rem; color: #94e2d5; margin-top: 10px; }
+        .sound-status { font-size: 0.8rem; color: #f9e2af; margin-top: 8px; }
+        .note-preview { font-size: 0.85rem; color: #bac2de; margin-top: 8px; max-height: 70px; overflow-y: auto; background: #11111b; padding: 6px; border-radius: 4px; display: none; text-align: left; user-select: text; }
+
+        .seg { display: none; margin-top: 12px; text-align: left; border-top: 1px solid #313244; padding-top: 10px; }
+        .seg.show { display: block; }
+        .seg-title { font-size: 0.9rem; color: #cba6f7; font-weight: bold; }
+        #waveform { width: 100%; height: 80px; display: block; margin-top: 8px; border-radius: 6px; cursor: crosshair; background: #11111b; touch-action: none; }
+        .seg-info { font-size: 0.85rem; color: #bac2de; margin-top: 6px; }
+        .seg-status { font-size: 0.85rem; color: #94e2d5; margin-top: 6px; min-height: 1.2em; }
+
+        .piano-wrap { max-width: 100%; overflow-x: auto; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); background: #11111b; }
+        .piano { position: relative; display: inline-flex; padding: 15px 15px 0 15px; }
+        .key { cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; font-weight: bold; transition: 0.05s; flex-shrink: 0; box-sizing: border-box; }
+        .key .kb { font-size: 0.8rem; opacity: 0.75; min-height: 1em; }
+        .key .nn { font-size: 0.62rem; }
+        .white { width: 40px; height: 200px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 0 0 6px 6px; z-index: 1; }
+        .white.active { background: #89b4fa; transform: translateY(3px); }
+        .black { width: 26px; height: 120px; background: #181825; color: #fff; margin: 0 -13px; border-radius: 0 0 5px 5px; z-index: 2; }
+        .black.active { background: #f38ba8; transform: translateY(3px); }
+        .key.demo { background: #fab387 !important; color: #11111b !important; }
+        .key.hint { background: #a6e3a1 !important; color: #11111b !important; box-shadow: 0 0 15px #a6e3a1; }
+        .key.wrong { background: #f38ba8 !important; }
+        .key.due { outline: 3px solid #f9e2af; box-shadow: 0 0 25px 8px #f9e2af !important; }
+        .rhythm-row { margin-top: 10px; font-size: 0.9rem; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; align-items: center; }
+        .rhythm-row select { background: #45475a; color: #cdd6f4; border: none; border-radius: 4px; padding: 3px 6px; }
+        .paste-box { margin-top: 12px; text-align: left; }
+        .paste-box textarea { width: 100%; box-sizing: border-box; background: #11111b; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 8px; font-family: Consolas, monospace; font-size: 0.9rem; user-select: text; resize: vertical; }
+        .rhythm-info { font-size: 0.95rem; color: #f9e2af; margin-top: 6px; min-height: 1.2em; }
+        .credit { font-size: 0.7rem; color: #6c7086; margin-top: 14px; text-align: center; max-width: 780px; }
+        body { padding-top: 64px; }
+        .lang-box { position: fixed; top: 14px; right: 16px; z-index: 50; background: #313244; padding: 6px 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 6px; }
+        .lang-box select { background: #45475a; color: #cdd6f4; border: none; border-radius: 4px; padding: 4px 6px; font-size: 0.9rem; cursor: pointer; }
+        .white.kbmap { box-shadow: inset 0 -6px 0 rgba(137,180,250,0.55); }
+        .black.kbmap { box-shadow: inset 0 -5px 0 rgba(166,227,161,0.6); }
+        .piano.hide-names .nn { visibility: hidden; }
+        .warn { color: #f38ba8; font-size: 0.85rem; margin-top: 6px; }
+        .warn:empty { display: none; }
+        .rhythm-row input[type="range"] { vertical-align: middle; width: 90px; }
+    </style>
+</head>
+<body>
+    <div class="lang-box">
+        <span>🌐</span>
+        <select id="langSelect" aria-label="Language">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="zh">中文</option>
+        </select>
+    </div>
+
+    <div class="dashboard">
+        <div class="target-note" id="instruction"></div>
+        <div class="warn" id="engineWarn"></div>
+        <div class="stats">
+            <span><span data-i18n="score"></span>: <strong id="score">0</strong></span>
+            <span><span data-i18n="progress"></span>: <strong id="progressText">-</strong></span>
+            <span><span data-i18n="freq"></span>: <strong id="freq">0</strong> Hz</span>
+        </div>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="rhythm-row">
+            <label><input type="checkbox" id="rhythmOn" checked> <span data-i18n="rhythm"></span></label>
+            <label><span data-i18n="speed"></span>
+                <select id="speedSel">
+                    <option value="0.5" data-i18n="slow"></option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                </select>
+            </label>
+            <label><span data-i18n="practiceLabel"></span>
+                <select id="practiceSel">
+                    <option value="melody" data-i18n="practiceMelody"></option>
+                    <option value="full" data-i18n="practiceFull"></option>
+                </select>
+            </label>
+            <label>🔊 <span data-i18n="volume"></span> <input type="range" id="volume" min="0" max="100" value="90"></label>
+            <label><input type="checkbox" id="showNames" checked> <span data-i18n="showNames"></span></label>
+        </div>
+        <div class="rhythm-info" id="rhythmInfo"></div>
+        <div class="kb-info" id="kbInfo"></div>
+
+        <div class="upload-section">
+            <div>🎵 <strong data-i18n="uploadTitle"></strong></div>
+            <label for="fileUpload" class="btn" data-i18n="chooseFile"></label>
+            <button class="btn secondary" id="btnDemo" type="button" data-i18n="demoPlay"></button>
+            <button class="btn secondary" id="btnRestart" type="button" data-i18n="restart"></button>
+            <button class="btn secondary" id="btnDefault" type="button" data-i18n="defaultBtn"></button>
+            <input type="file" id="fileUpload" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.txt">
+            <div class="sound-status" id="soundStatus"></div>
+            <div class="song-info" id="songTitle"></div>
+
+            <div class="paste-box">
+                <textarea id="notesText" rows="2" data-i18n-ph="pastePh"></textarea>
+                <button class="btn go" id="btnLoadText" type="button" data-i18n="loadPasted"></button>
+            </div>
+
+            <div class="seg" id="segPanel">
+                <div class="seg-title" data-i18n="segTitle"></div>
+                <canvas id="waveform"></canvas>
+                <div class="seg-info" id="segInfo"></div>
+                <div>
+                    <button class="btn secondary" id="btnSegPlay" type="button" data-i18n="segPlay"></button>
+                    <button class="btn secondary" id="btnSetStart" type="button" data-i18n="setStart"></button>
+                    <button class="btn secondary" id="btnSetEnd" type="button" data-i18n="setEnd"></button>
+                    <label style="font-size:0.85rem;margin:0 8px"><input type="checkbox" id="dropBass" checked> <span data-i18n="dropBass"></span></label>
+                    <label style="font-size:0.85rem;margin:0 8px"><input type="checkbox" id="quantize" checked> <span data-i18n="quantize"></span></label>
+                    <button class="btn go" id="btnAnalyze" type="button" data-i18n="analyze"></button>
+                </div>
+                <div class="seg-status" id="segStatus"></div>
+            </div>
+
+            <div class="note-preview" id="notePreview"></div>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+    </div>
+
+    <div class="piano-wrap" id="pianoWrap"><div class="piano" id="piano"></div></div>
+    <div class="credit" data-i18n="credit"></div>
+
+    <script>
+        var Module = {
+            onRuntimeInitialized: function () {
+                initCppEngine();
+            }
+        };
+    </script>
+    <script src="piano_engine.js"></script>
+
+    <script>
+        // =====================================================================
+        // ĐA NGÔN NGỮ (i18n): vi / en / ja / zh
+        // =====================================================================
+        const LANGS = ['vi', 'en', 'ja', 'zh'];
+        const T = {
+            vi: {
+                docTitle: 'Pianixt',
+                practiceLabel: 'Luyện', practiceMelody: 'Chỉ giai điệu', practiceFull: 'Cả hợp âm', dropBass: 'Bỏ phần bass (dưới C3)', quantize: 'Căn nhịp (đệm khớp giai điệu)',
+                m4aHint: ' (Trình duyệt có thể chưa hỗ trợ m4a — thử Chrome/Edge/Safari hoặc đổi sang mp3)',
+                welcome: 'Chào mừng đến với Pianixt',
+                fileWarn: '⚠️ Hãy mở bằng http://localhost:8000 (python -m http.server), không double-click file',
+                engineFail: 'C++ Engine chưa tải được. Hãy mở trang qua http://localhost:8000 và nhấn F12 → Console để xem lỗi.',
+                score: 'Điểm số', progress: 'Tiến độ', freq: 'Tần số C++',
+                rhythm: '🥁 Chơi đúng nhịp', speed: 'Tốc độ', slow: '0.5x (chậm)', volume: 'Âm lượng', showNames: 'Hiện tên nốt',
+                uploadTitle: 'Chuyển nhạc MP3/WAV/M4A thành bài tập Piano (giai điệu + hợp âm):',
+                chooseFile: '📂 Chọn file nhạc (.mp3, .wav, .m4a, .txt)',
+                demoPlay: '▶ Nghe mẫu bằng piano', demoStop: '⏹ Dừng nghe mẫu',
+                restart: '🔁 Tập lại từ đầu', defaultBtn: '🎹 Chơi tự do',
+                defaultTitle: 'Đang ở chế độ chơi tự do — hãy nạp một bài để bắt đầu tập.',
+                pastePh: 'Hoặc dán nốt nhạc vào đây, ví dụ: E5 D#5 E5 D#5 E5 B4 D5 C5 A4   (hợp âm: C4+E4+G4 · thêm :0.5 để chỉnh độ dài, R:0.5 để nghỉ, BPM=90 để chỉnh tốc độ — đều không bắt buộc)',
+                loadPasted: '🎼 Nạp nốt đã dán', pastedLabel: 'nốt đã dán',
+                segTitle: '✂️ Chọn đoạn muốn tập: kéo chuột trên sóng nhạc (tối đa 90 giây một lần)',
+                segPlay: '▶ Nghe đoạn đã chọn', setStart: '⇤ Đầu = vị trí đang nghe', setEnd: '⇥ Cuối = vị trí đang nghe',
+                analyze: '🎼 Phân tích đoạn này',
+                credit: 'Âm thanh piano: Salamander Grand Piano (Alexander Holm), giấy phép CC BY 3.0, tải qua tonejs.github.io. Nếu không có Internet, trang tự dùng âm thanh mô phỏng.',
+                soundLoading: (d, n) => `⏳ Đang tải âm thanh piano thật... ${d}/${n}`,
+                soundReal: (ok, n) => `🎹 Âm thanh: piano Grand thật (${ok}/${n} mẫu)`,
+                soundSynth: '🎹 Đang dùng âm thanh mô phỏng (không tải được mẫu piano thật, cần Internet)',
+                kbInfo: (a, b) => `Gõ phím A → ; trên bàn phím (hàng trên W E T Y U O P là phím đen) = ${a} → ${b} · ←/→ đổi quãng tám · giữ Space = pedal ngân`,
+                rhStart: '▶ Bắt đầu! Bấm nốt tiếp theo khi phím sáng viền vàng.',
+                rhAnchor: '▶ Đã bắt nhịp từ nốt này.',
+                rhPerfect: '🎯 Đúng nhịp', rhSlightEarly: '👍 Hơi sớm', rhSlightLate: '👍 Hơi muộn', rhEarly: '⏩ Sớm quá', rhLate: '⏪ Muộn quá',
+                rhLine: (label, ms, pct) => `${label} (${ms}ms) · đúng nhịp ${pct}%`,
+                rhFinal: (p, n) => `🏁 Đúng nhịp ${p}/${n} nốt`,
+                done: '🎉 Hoàn thành trọn vẹn! Điểm đã reset về 0',
+                preview: (n, list) => `Chuỗi nốt (${n} bước): ${list}`,
+                ready: (label, n) => `🎹 Sẵn sàng tập luyện: ${label} (${n} nốt)`,
+                bpmSuffix: (bpm) => ` · ${bpm} BPM`,
+                skipSuffix: (n, list) => ` · bỏ qua ${n} mục không hiểu (${list})`,
+                segInfo: (a, b, secs, total) => `Đoạn đã chọn: ${a} → ${b} (${secs} giây) · tổng thời lượng ${total}`,
+                analyzing: (p) => `⏳ Đang phân tích... ${p}%`,
+                noMelody: '⚠️ Không nhận ra nốt nào rõ ràng trong đoạn này. Thử đoạn khác có nhạc cụ hoặc giọng hát nổi bật, ít tiếng ồn.',
+                found: (n, c, bpm) => `✅ Tìm thấy ${n} nốt, ${c} hợp âm${bpm ? ` · tempo ≈ ${bpm} BPM` : ''}. Bấm "Nghe mẫu" để so với bản gốc hoặc bắt đầu tập!`,
+                analyzeErr: (m) => `❌ Lỗi khi phân tích: ${m}`,
+                engineNotReady: 'C++ Engine chưa sẵn sàng.',
+                reading: (name) => `⏳ Đang đọc file "${name}"...`,
+                loadedAudio: (name, dur) => `🎧 Đã tải "${name}" (${dur}). Hãy kéo chọn đoạn muốn tập rồi bấm "Phân tích đoạn này".`,
+                decodeErr: (m) => `❌ Lỗi giải mã file âm thanh: ${m}`,
+                txtErr: (m) => `❌ Lỗi đọc file .txt: ${m}`,
+                alertEngine: 'C++ Engine chưa tải được nên chưa nạp bài. Hãy mở trang qua http://localhost:8000 và nhấn F12 → Console để xem lỗi.',
+                alertEmpty: 'File này rỗng (0 byte). Hãy mở file bằng Notepad, dán nốt nhạc vào, bấm Ctrl+S để lưu rồi chọn lại. Hoặc dán thẳng nốt vào ô bên dưới nút chọn file.',
+                alertNoNotes: 'Không thấy nốt nào trong nội dung (chỉ có khoảng trắng hoặc dấu phân cách).',
+                alertBad: (list, codes) => `Không đọc được nốt nào (cần dạng C2 đến C8, ví dụ C4 D#4 Gb3).\nCác mục không hiểu: ${list}\nMã ký tự của mục đầu tiên: ${codes}`
+            },
+            en: {
+                docTitle: 'Pianixt',
+                practiceLabel: 'Practice', practiceMelody: 'Melody only', practiceFull: 'With chords', dropBass: 'Drop bass (below C3)', quantize: 'Snap to beat grid (align accompaniment)',
+                m4aHint: ' (This browser may not support m4a — try Chrome/Edge/Safari or convert to mp3)',
+                welcome: 'Welcome to Pianixt',
+                fileWarn: '⚠️ Please open via http://localhost:8000 (python -m http.server), do not double-click the file',
+                engineFail: 'The C++ engine failed to load. Open the page via http://localhost:8000 and press F12 → Console to see the error.',
+                score: 'Score', progress: 'Progress', freq: 'C++ frequency',
+                rhythm: '🥁 Play in rhythm', speed: 'Speed', slow: '0.5x (slow)', volume: 'Volume', showNames: 'Show note names',
+                uploadTitle: 'Turn MP3/WAV/M4A music into piano practice (melody + chords):',
+                chooseFile: '📂 Choose music file (.mp3, .wav, .m4a, .txt)',
+                demoPlay: '▶ Listen with piano', demoStop: '⏹ Stop listening',
+                restart: '🔁 Restart', defaultBtn: '🎹 Free play',
+                defaultTitle: 'Free play mode — load a song to start practicing.',
+                pastePh: 'Or paste notes here, e.g.: E5 D#5 E5 D#5 E5 B4 D5 C5 A4   (chord: C4+E4+G4 · add :0.5 for length, R:0.5 for a rest, BPM=90 for tempo — all optional)',
+                loadPasted: '🎼 Load pasted notes', pastedLabel: 'pasted notes',
+                segTitle: '✂️ Pick the part to practice: drag on the waveform (up to 90 seconds at a time)',
+                segPlay: '▶ Play selection', setStart: '⇤ Start = playhead', setEnd: '⇥ End = playhead',
+                analyze: '🎼 Analyze selection',
+                credit: 'Piano sound: Salamander Grand Piano (Alexander Holm), CC BY 3.0 license, loaded via tonejs.github.io. Without Internet, the page uses a synthesized sound.',
+                soundLoading: (d, n) => `⏳ Loading real piano sound... ${d}/${n}`,
+                soundReal: (ok, n) => `🎹 Sound: real Grand piano (${ok}/${n} samples)`,
+                soundSynth: '🎹 Using synthesized sound (real piano samples could not be loaded, Internet needed)',
+                kbInfo: (a, b) => `Type A → ; on your keyboard (the W E T Y U O P row = black keys) = ${a} → ${b} · ←/→ change octave · hold Space = sustain pedal`,
+                rhStart: '▶ Go! Press the next note when the key glows with a yellow outline.',
+                rhAnchor: '▶ Tempo locked from this note.',
+                rhPerfect: '🎯 On beat', rhSlightEarly: '👍 Slightly early', rhSlightLate: '👍 Slightly late', rhEarly: '⏩ Too early', rhLate: '⏪ Too late',
+                rhLine: (label, ms, pct) => `${label} (${ms}ms) · on beat ${pct}%`,
+                rhFinal: (p, n) => `🏁 On beat ${p}/${n} notes`,
+                done: '🎉 Perfect run! Score reset to 0',
+                preview: (n, list) => `Notes (${n} steps): ${list}`,
+                ready: (label, n) => `🎹 Ready to practice: ${label} (${n} notes)`,
+                bpmSuffix: (bpm) => ` · ${bpm} BPM`,
+                skipSuffix: (n, list) => ` · skipped ${n} unrecognized item(s) (${list})`,
+                segInfo: (a, b, secs, total) => `Selected: ${a} → ${b} (${secs} s) · total length ${total}`,
+                analyzing: (p) => `⏳ Analyzing... ${p}%`,
+                noMelody: '⚠️ No clear notes found in this part. Try another part with a prominent instrument or vocal and less noise.',
+                found: (n, c, bpm) => `✅ Found ${n} notes, ${c} chords${bpm ? ` · tempo ≈ ${bpm} BPM` : ''}. Press "Listen with piano" to compare with the original or start practicing!`,
+                analyzeErr: (m) => `❌ Analysis error: ${m}`,
+                engineNotReady: 'The C++ engine is not ready.',
+                reading: (name) => `⏳ Reading "${name}"...`,
+                loadedAudio: (name, dur) => `🎧 Loaded "${name}" (${dur}). Drag to select the part to practice, then press "Analyze selection".`,
+                decodeErr: (m) => `❌ Audio decode error: ${m}`,
+                txtErr: (m) => `❌ .txt read error: ${m}`,
+                alertEngine: 'The C++ engine has not loaded, so the song cannot be loaded. Open the page via http://localhost:8000 and press F12 → Console to see the error.',
+                alertEmpty: 'This file is empty (0 bytes). Open it in Notepad, paste your notes, press Ctrl+S to save, then choose it again. Or paste the notes directly into the box below the file button.',
+                alertNoNotes: 'No notes found (only spaces or separators).',
+                alertBad: (list, codes) => `No notes could be read (use C2 to C8, e.g. C4 D#4 Gb3).\nUnrecognized items: ${list}\nCharacter codes of the first item: ${codes}`
+            },
+            ja: {
+                docTitle: 'Pianixt',
+                practiceLabel: '練習', practiceMelody: 'メロディーのみ', practiceFull: '和音も弾く', dropBass: '低音を除く（C3未満）', quantize: 'リズムに合わせる（伴奏を揃える）',
+                m4aHint: '（このブラウザはm4a未対応かもしれません。Chrome/Edge/Safariを試すか、mp3に変換してください）',
+                welcome: 'Pianixtへようこそ',
+                fileWarn: '⚠️ http://localhost:8000 (python -m http.server) で開いてください。ファイルをダブルクリックしないでください',
+                engineFail: 'C++エンジンを読み込めませんでした。http://localhost:8000 でページを開き、F12 → Console でエラーを確認してください。',
+                score: 'スコア', progress: '進捗', freq: 'C++周波数',
+                rhythm: '🥁 リズムに合わせて弾く', speed: '速度', slow: '0.5x（遅い）', volume: '音量', showNames: '音名を表示',
+                uploadTitle: 'MP3/WAV/M4Aの音楽をピアノ練習曲に変換（メロディー＋和音）：',
+                chooseFile: '📂 音楽ファイルを選ぶ (.mp3, .wav, .m4a, .txt)',
+                demoPlay: '▶ ピアノで試聴', demoStop: '⏹ 試聴を停止',
+                restart: '🔁 最初からやり直す', defaultBtn: '🎹 自由演奏',
+                defaultTitle: '自由演奏モードです。練習を始めるには曲を読み込んでください。',
+                pastePh: 'または音符をここに貼り付け。例：E5 D#5 E5 D#5 E5 B4 D5 C5 A4   （和音：C4+E4+G4 ・:0.5 で長さ、R:0.5 で休符、BPM=90 でテンポ ― すべて省略可）',
+                loadPasted: '🎼 貼り付けた音符を読み込む', pastedLabel: '貼り付けた音符',
+                segTitle: '✂️ 練習する区間を選択：波形上をドラッグ（一度に最大90秒）',
+                segPlay: '▶ 選択範囲を再生', setStart: '⇤ 開始＝再生位置', setEnd: '⇥ 終了＝再生位置',
+                analyze: '🎼 この区間を解析',
+                credit: 'ピアノ音源：Salamander Grand Piano（Alexander Holm）、CC BY 3.0 ライセンス、tonejs.github.io から読み込み。インターネットがない場合は合成音を使用します。',
+                soundLoading: (d, n) => `⏳ 本物のピアノ音を読み込み中... ${d}/${n}`,
+                soundReal: (ok, n) => `🎹 音源：本物のグランドピアノ（${ok}/${n} サンプル）`,
+                soundSynth: '🎹 合成音を使用中（本物のピアノ音を読み込めませんでした。インターネットが必要です）',
+                kbInfo: (a, b) => `キーボードの A → ; を押す（W E T Y U O P の段は黒鍵）＝ ${a} → ${b} ・←/→ でオクターブ変更 ・Space 長押し＝サステインペダル`,
+                rhStart: '▶ スタート！鍵盤が黄色の枠で光ったら次の音を押してください。',
+                rhAnchor: '▶ この音からテンポを合わせました。',
+                rhPerfect: '🎯 ぴったり', rhSlightEarly: '👍 少し早い', rhSlightLate: '👍 少し遅い', rhEarly: '⏩ 早すぎ', rhLate: '⏪ 遅すぎ',
+                rhLine: (label, ms, pct) => `${label}（${ms}ms）・リズム正確率 ${pct}%`,
+                rhFinal: (p, n) => `🏁 リズム正確 ${p}/${n} 音`,
+                done: '🎉 完璧です！スコアを0にリセットしました',
+                preview: (n, list) => `音符列（${n} ステップ）：${list}`,
+                ready: (label, n) => `🎹 練習の準備完了：${label}（${n} 音）`,
+                bpmSuffix: (bpm) => ` ・${bpm} BPM`,
+                skipSuffix: (n, list) => ` ・解釈できない ${n} 件をスキップ（${list}）`,
+                segInfo: (a, b, secs, total) => `選択範囲：${a} → ${b}（${secs} 秒）・全体の長さ ${total}`,
+                analyzing: (p) => `⏳ 解析中... ${p}%`,
+                noMelody: '⚠️ この区間ではっきりした音が見つかりませんでした。楽器や歌声が目立ち、ノイズの少ない別の区間を試してください。',
+                found: (n, c, bpm) => `✅ ${n} 音、和音 ${c} 個を検出${bpm ? ` ・テンポ約 ${bpm} BPM` : ''}。「ピアノで試聴」で原曲と聴き比べるか、練習を始めましょう！`,
+                analyzeErr: (m) => `❌ 解析エラー：${m}`,
+                engineNotReady: 'C++エンジンの準備ができていません。',
+                reading: (name) => `⏳ ファイル「${name}」を読み込み中...`,
+                loadedAudio: (name, dur) => `🎧 「${name}」を読み込みました（${dur}）。練習する区間をドラッグで選び、「この区間を解析」を押してください。`,
+                decodeErr: (m) => `❌ 音声ファイルのデコードエラー：${m}`,
+                txtErr: (m) => `❌ .txt の読み込みエラー：${m}`,
+                alertEngine: 'C++エンジンが読み込まれていないため、曲を読み込めません。http://localhost:8000 でページを開き、F12 → Console でエラーを確認してください。',
+                alertEmpty: 'このファイルは空です（0バイト）。メモ帳で開いて音符を貼り付け、Ctrl+S で保存してからもう一度選んでください。または、ファイル選択ボタンの下の入力欄に直接貼り付けてください。',
+                alertNoNotes: '内容に音符が見つかりません（空白や区切り文字のみ）。',
+                alertBad: (list, codes) => `音符を読み取れませんでした（C2〜C8 の形式、例：C4 D#4 Gb3）。\n解釈できない項目：${list}\n最初の項目の文字コード：${codes}`
+            },
+            zh: {
+                docTitle: 'Pianixt',
+                practiceLabel: '练习', practiceMelody: '仅旋律', practiceFull: '含和弦', dropBass: '去掉低音（C3 以下）', quantize: '对齐节拍（伴奏与旋律同步）',
+                m4aHint: '（此浏览器可能不支持 m4a — 请试试 Chrome/Edge/Safari，或转换成 mp3）',
+                welcome: '欢迎来到 Pianixt',
+                fileWarn: '⚠️ 请通过 http://localhost:8000 (python -m http.server) 打开，不要直接双击文件',
+                engineFail: 'C++ 引擎加载失败。请通过 http://localhost:8000 打开页面，并按 F12 → Console 查看错误。',
+                score: '得分', progress: '进度', freq: 'C++ 频率',
+                rhythm: '🥁 按节奏弹奏', speed: '速度', slow: '0.5x（慢）', volume: '音量', showNames: '显示音名',
+                uploadTitle: '把 MP3/WAV/M4A 音乐转换成钢琴练习（旋律＋和弦）：',
+                chooseFile: '📂 选择音乐文件 (.mp3, .wav, .m4a, .txt)',
+                demoPlay: '▶ 用钢琴试听', demoStop: '⏹ 停止试听',
+                restart: '🔁 从头练习', defaultBtn: '🎹 自由演奏',
+                defaultTitle: '当前为自由演奏模式 — 载入曲目即可开始练习。',
+                pastePh: '或在此粘贴音符，例如：E5 D#5 E5 D#5 E5 B4 D5 C5 A4   （和弦：C4+E4+G4 · 加 :0.5 调整时值，R:0.5 表示休止，BPM=90 调整速度 — 均可省略）',
+                loadPasted: '🎼 载入粘贴的音符', pastedLabel: '粘贴的音符',
+                segTitle: '✂️ 选择要练习的片段：在波形上拖动（每次最多 90 秒）',
+                segPlay: '▶ 播放所选片段', setStart: '⇤ 起点＝当前播放位置', setEnd: '⇥ 终点＝当前播放位置',
+                analyze: '🎼 分析此片段',
+                credit: '钢琴音色：Salamander Grand Piano（Alexander Holm），CC BY 3.0 许可，通过 tonejs.github.io 加载。没有网络时，页面会自动使用模拟音色。',
+                soundLoading: (d, n) => `⏳ 正在加载真实钢琴音色... ${d}/${n}`,
+                soundReal: (ok, n) => `🎹 音色：真实三角钢琴（${ok}/${n} 个采样）`,
+                soundSynth: '🎹 正在使用模拟音色（无法加载真实钢琴采样，需要联网）',
+                kbInfo: (a, b) => `敲击键盘 A → ;（W E T Y U O P 一行为黑键）＝ ${a} → ${b} · ←/→ 切换八度 · 按住 Space ＝ 延音踏板`,
+                rhStart: '▶ 开始！当琴键亮起黄色边框时按下一个音。',
+                rhAnchor: '▶ 已从这个音开始对齐节奏。',
+                rhPerfect: '🎯 节奏准确', rhSlightEarly: '👍 稍早', rhSlightLate: '👍 稍晚', rhEarly: '⏩ 太早', rhLate: '⏪ 太晚',
+                rhLine: (label, ms, pct) => `${label}（${ms}ms）· 节奏准确率 ${pct}%`,
+                rhFinal: (p, n) => `🏁 节奏准确 ${p}/${n} 个音`,
+                done: '🎉 完美完成！得分已重置为 0',
+                preview: (n, list) => `音符序列（${n} 步）：${list}`,
+                ready: (label, n) => `🎹 准备练习：${label}（${n} 个音）`,
+                bpmSuffix: (bpm) => ` · ${bpm} BPM`,
+                skipSuffix: (n, list) => ` · 跳过 ${n} 个无法识别的项（${list}）`,
+                segInfo: (a, b, secs, total) => `已选片段：${a} → ${b}（${secs} 秒）· 总时长 ${total}`,
+                analyzing: (p) => `⏳ 正在分析... ${p}%`,
+                noMelody: '⚠️ 此片段中没有找到清晰的音符。请换一段乐器或人声突出、噪音较少的片段。',
+                found: (n, c, bpm) => `✅ 找到 ${n} 个音、${c} 个和弦${bpm ? ` · 速度约 ${bpm} BPM` : ''}。点击“用钢琴试听”对比原曲，或直接开始练习！`,
+                analyzeErr: (m) => `❌ 分析出错：${m}`,
+                engineNotReady: 'C++ 引擎尚未就绪。',
+                reading: (name) => `⏳ 正在读取文件“${name}”...`,
+                loadedAudio: (name, dur) => `🎧 已加载“${name}”（${dur}）。请拖动选择要练习的片段，然后点击“分析此片段”。`,
+                decodeErr: (m) => `❌ 音频解码出错：${m}`,
+                txtErr: (m) => `❌ 读取 .txt 文件出错：${m}`,
+                alertEngine: 'C++ 引擎未能加载，因此无法载入曲目。请通过 http://localhost:8000 打开页面，并按 F12 → Console 查看错误。',
+                alertEmpty: '此文件为空（0 字节）。请用记事本打开，粘贴音符，按 Ctrl+S 保存后重新选择。或直接把音符粘贴到文件按钮下方的输入框中。',
+                alertNoNotes: '内容中没有找到音符（只有空白或分隔符）。',
+                alertBad: (list, codes) => `无法识别任何音符（需要 C2 到 C8 的格式，例如 C4 D#4 Gb3）。\n无法识别的项：${list}\n第一项的字符编码：${codes}`
+            }
+        };
+
+        let lang = 'vi';
+        try { const saved = localStorage.getItem('pianixt_lang'); if (LANGS.includes(saved)) lang = saved; } catch (e) { /* bỏ qua */ }
+
+        function tr(key, ...args) {
+            const v = (T[lang] && T[lang][key] !== undefined) ? T[lang][key] : T.vi[key];
+            return typeof v === 'function' ? v(...args) : v;
+        }
+        const labelText = (l) => (typeof l === 'function' ? l() : l);
+
+        // Mỗi phần tử chữ được "buộc" với một hàm sinh chữ -> đổi ngôn ngữ là vẽ lại toàn bộ
+        const binds = new Map();
+        function setText(target, v) {
+            const el = typeof target === 'string' ? document.getElementById(target) : target;
+            if (!el) return;
+            const fn = typeof v === 'function' ? v : () => v;
+            binds.set(el, fn);
+            el.innerText = fn();
+        }
+        function applyLang() {
+            document.documentElement.lang = lang;
+            document.title = tr('docTitle');
+            binds.forEach((fn, el) => { el.innerText = fn(); });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tr(el.dataset.i18nPh); });
+        }
+        function initStaticI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.dataset.i18n;
+                setText(el, () => tr(k));
+            });
+            const sel = document.getElementById('langSelect');
+            sel.value = lang;
+            sel.addEventListener('change', () => {
+                lang = sel.value;
+                try { localStorage.setItem('pianixt_lang', lang); } catch (e) { /* bỏ qua */ }
+                applyLang();
+                sel.blur();   // trả phím về cho đàn, không để ô chọn "bắt" phím gõ
+            });
+            applyLang();
+        }
+
+        setText('instruction', () => tr('welcome'));
+        if (location.protocol === 'file:') setText('engineWarn', () => tr('fileWarn'));
+
+        // =====================================================================
+        // PHẦN 1: ÂM THANH PIANO
+        // =====================================================================
+        // ==SOUND-START==
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const SAMPLE_BASE = 'https://tonejs.github.io/audio/salamander/';
+        let audioCtx = null, masterGain = null, masterVol = 0.9;
+        let usingSamples = false;
+        const sampleBuffers = {};   // midi -> AudioBuffer
+        let sampleKeys = [];        // danh sách midi có mẫu, đã sắp xếp
+        let noiseBuffer = null;
+
+        function makeImpulse(ctx, seconds, decay) {
+            const len = Math.floor(ctx.sampleRate * seconds);
+            const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+            for (let c = 0; c < 2; c++) {
+                const d = buf.getChannelData(c);
+                for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+            }
+            return buf;
+        }
+
+        function getCtx() {
+            if (audioCtx) return audioCtx;
+            audioCtx = new AudioContextClass();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = masterVol;
+            const comp = audioCtx.createDynamicsCompressor();
+            comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.25;
+            comp.connect(audioCtx.destination);
+            masterGain.connect(comp);
+            // Vang phòng nhẹ cho cảm giác "đàn thật"
+            const reverb = audioCtx.createConvolver();
+            reverb.buffer = makeImpulse(audioCtx, 1.8, 2.6);
+            const wet = audioCtx.createGain();
+            wet.gain.value = 0.16;
+            masterGain.connect(reverb); reverb.connect(wet); wet.connect(comp);
+            // Bộ đệm nhiễu cho tiếng búa đàn
+            const nl = Math.floor(audioCtx.sampleRate * 0.05);
+            noiseBuffer = audioCtx.createBuffer(1, nl, audioCtx.sampleRate);
+            const nd = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < nl; i++) nd[i] = Math.random() * 2 - 1;
+            return audioCtx;
+        }
+
+        function ensureAudioContext() {
+            const ctx = getCtx();
+            if (ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        }
+
+        // ----- Tải mẫu piano thật (Salamander Grand, mỗi 3 nốt một mẫu) -----
+        function sampleList() {
+            const list = [];
+            const names = [['C', 0], ['Ds', 3], ['Fs', 6], ['A', 9]];
+            for (let oct = 1; oct <= 8; oct++) {
+                for (const [n, off] of names) {
+                    const midi = 12 * (oct + 1) + off;
+                    if (midi >= 33 && midi <= 108) list.push({ midi, file: `${n}${oct}.mp3` });
+                }
+            }
+            return list;
+        }
+
+        function setSoundStatus(v) { setText('soundStatus', v); }
+
+        async function loadPianoSamples() {
+            const ctx = getCtx();
+            const list = sampleList();
+            let done = 0, ok = 0;
+            setSoundStatus(() => tr('soundLoading', 0, list.length));
+            await Promise.all(list.map(async (s) => {
+                try {
+                    const res = await fetch(SAMPLE_BASE + s.file);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const ab = await res.arrayBuffer();
+                    sampleBuffers[s.midi] = await ctx.decodeAudioData(ab);
+                    ok++;
+                } catch (err) {
+                    console.warn('Không tải được mẫu', s.file, err);
+                }
+                done++;
+                setSoundStatus(() => tr('soundLoading', done, list.length));
+            }));
+            sampleKeys = Object.keys(sampleBuffers).map(Number).sort((a, b) => a - b);
+            if (ok >= 6) {
+                usingSamples = true;
+                setSoundStatus(() => tr('soundReal', ok, list.length));
+            } else {
+                usingSamples = false;
+                setSoundStatus(() => tr('soundSynth'));
+            }
+        }
+
+        function nearestSampleMidi(midi) {
+            let best = sampleKeys[0], bd = Infinity;
+            for (const k of sampleKeys) {
+                const d = Math.abs(k - midi);
+                if (d < bd) { bd = d; best = k; }
+            }
+            return best;
+        }
+
+        // ----- Giọng dự phòng: tổng hợp cộng nhiều hài âm (khi không có mẫu) -----
+        function buildSynthVoice(ctx, out, v, midi, vel, t) {
+            const f = 440 * Math.pow(2, (midi - 69) / 12);
+            const B = 0.00015 * Math.pow(f / 261.6, 2);            // độ lệch hài âm của dây đàn thật
+            const N = Math.max(3, Math.min(12, Math.floor(9000 / f)));
+            const tau1 = 3.0 * Math.pow(261.6 / f, 0.35) * (0.7 + 0.3 * vel);
+            const lp = ctx.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.value = 1800 + 9000 * vel;
+            const body = ctx.createGain();
+            body.gain.value = 0.22;
+            lp.connect(body); body.connect(out);
+            for (let n = 1; n <= N; n++) {
+                const fn = n * f * Math.sqrt(1 + B * n * n);
+                if (fn > 12000) break;
+                const amp = (1 / Math.pow(n, 1.15)) * (n > 1 ? 0.35 + 0.65 * vel : 1);
+                const tau = tau1 / (1 + 0.8 * (n - 1));
+                const strings = n <= 3 ? [1, 1.0006] : [1];          // 2 dây hơi lệch -> tiếng "ngân" tự nhiên
+                for (const k of strings) {
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = fn * k;
+                    const g = ctx.createGain();
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(amp * (k === 1 ? 1 : 0.6), t + 0.004);
+                    g.gain.setTargetAtTime(0, t + 0.004, tau);
+                    osc.connect(g); g.connect(lp);
+                    osc.start(t);
+                    osc.stop(t + Math.min(14, tau * 6 + 0.5));
+                    v.nodes.push(osc);
+                }
+            }
+            // Tiếng "cộp" của búa đàn
+            const nz = ctx.createBufferSource();
+            nz.buffer = noiseBuffer;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = Math.min(4000, f * 3);
+            bp.Q.value = 0.8;
+            const ng = ctx.createGain();
+            ng.gain.setValueAtTime(0.1 * vel, t);
+            ng.gain.exponentialRampToValueAtTime(0.0005, t + 0.04);
+            nz.connect(bp); bp.connect(ng); ng.connect(out);
+            nz.start(t);
+        }
+
+        // ----- Điều khiển nốt: bấm, nhả, pedal -----
+        let pedalDown = false;
+        const sustainedVoices = new Set();
+
+        function playNote(midi, vel, when) {
+            const ctx = ensureAudioContext();
+            if (vel == null) vel = 0.8;
+            const t = Math.max(when || 0, ctx.currentTime);
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.3 + 0.7 * vel, t);
+            g.connect(masterGain);
+            const v = { midi, gain: g, nodes: [], t0: t, released: false };
+
+            if (usingSamples && sampleKeys.length) {
+                const root = nearestSampleMidi(midi);
+                const src = ctx.createBufferSource();
+                src.buffer = sampleBuffers[root];
+                src.playbackRate.value = Math.pow(2, (midi - root) / 12);
+                // Đánh nhẹ thì tiếng tối hơn, đánh mạnh thì sáng hơn như đàn thật
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.value = 2500 + 15000 * vel;
+                src.connect(lp); lp.connect(g);
+                src.start(t);
+                v.nodes.push(src);
+            } else {
+                buildSynthVoice(ctx, g, v, midi, vel, t);
+            }
+            return v;
+        }
+
+        function doRelease(v, when) {
+            if (!v || v.released) return;
+            v.released = true;
+            sustainedVoices.delete(v);
+            const ctx = audioCtx;
+            const t = Math.max(when || 0, ctx.currentTime);
+            const tc = 0.05 + 0.1 * Math.max(0, Math.min(1, (96 - v.midi) / 60)); // nốt trầm tắt chậm hơn
+            v.gain.gain.setTargetAtTime(0, t, tc);
+            for (const n of v.nodes) { try { n.stop(t + tc * 7); } catch (e) { /* đã dừng */ } }
+        }
+
+        function releaseNote(v, when) {
+            if (!v || v.released) return;
+            if (when == null && pedalDown) { v.sustained = true; sustainedVoices.add(v); return; }
+            doRelease(v, when);
+        }
+
+        function setPedal(down) {
+            pedalDown = down;
+            const pe = document.getElementById('kbInfo');
+            if (pe) pe.classList.toggle('pedal', down);
+            if (!down) for (const v of Array.from(sustainedVoices)) doRelease(v);
+        }
+        // ==SOUND-END==
+
+        // =====================================================================
+        // PHẦN 2: ĐÀN PIANO 85 PHÍM (C2 → C8)
+        // =====================================================================
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const FIRST_MIDI = 36, LAST_MIDI = 108;
+        function noteName(m) { return NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1); }
+
+        const keysData = [];
+        for (let m = FIRST_MIDI; m <= LAST_MIDI; m++) {
+            keysData.push({ midi: m, note: noteName(m), type: [1, 3, 6, 8, 10].includes(m % 12) ? 'black' : 'white' });
+        }
+
+        // Phím máy tính giống đàn thật: hàng giữa A S D F G H J K L ; = phím trắng (C D E F G A B C D E)
+        // hàng trên W E T Y U O P = phím đen (C# D# F# G# A# C# D#). Mặc định bắt đầu từ C4.
+        const KEY_MAP = [['KeyA', 0], ['KeyW', 1], ['KeyS', 2], ['KeyE', 3], ['KeyD', 4], ['KeyF', 5], ['KeyT', 6], ['KeyG', 7],
+                         ['KeyY', 8], ['KeyH', 9], ['KeyU', 10], ['KeyJ', 11], ['KeyK', 12], ['KeyO', 13], ['KeyL', 14], ['KeyP', 15], ['Semicolon', 16]];
+        const KEY_SPAN = 16;
+        const BASE_MIN = 36, BASE_MAX = 96;
+        const codeToOffset = {};
+        KEY_MAP.forEach(([code, off]) => { codeToOffset[code] = off; });
+        let baseMidi = 60; // C4
+
+        const pianoEl = document.getElementById('piano');
+        const keyEls = {};
+        keysData.forEach(item => {
+            const keyDiv = document.createElement('div');
+            keyDiv.classList.add('key', item.type);
+            keyDiv.dataset.midi = item.midi;
+            keyDiv.innerHTML = `<span class="nn">${item.note}</span>`;
+            keyDiv.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const r = keyDiv.getBoundingClientRect();
+                const rel = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+                pressKey('p:' + e.pointerId, item.midi, 0.4 + 0.55 * rel); // bấm càng thấp càng mạnh
+            });
+            pianoEl.appendChild(keyDiv);
+            keyEls[item.midi] = keyDiv;
+        });
+
+        // Đánh dấu (vạch màu mỏng ở đáy phím) những phím đang gõ được bằng bàn phím máy tính
+        function refreshKeyLabels() {
+            for (const item of keysData) {
+                const off = item.midi - baseMidi;
+                keyEls[item.midi].classList.toggle('kbmap', off >= 0 && off <= KEY_SPAN);
+            }
+            setText('kbInfo', () => tr('kbInfo', noteName(baseMidi), noteName(baseMidi + KEY_SPAN)));
+        }
+        refreshKeyLabels();
+
+        function midiForCode(code) {
+            const off = codeToOffset[code];
+            if (off === undefined) return null;
+            const m = baseMidi + off;
+            return (m >= FIRST_MIDI && m <= LAST_MIDI) ? m : null;
+        }
+
+        // ----- Giữ phím / nhả phím -----
+        const heldKeys = new Map();
+
+        function pressKey(id, midi, vel) {
+            if (heldKeys.has(id)) return;
+            const voice = playNote(midi, vel);
+            heldKeys.set(id, { midi, voice });
+            keyEls[midi].classList.add('active');
+            practiceCheck(midi);
+        }
+
+        function releaseKey(id) {
+            const h = heldKeys.get(id);
+            if (!h) return;
+            heldKeys.delete(id);
+            releaseNote(h.voice);
+            keyEls[h.midi].classList.remove('active');
+        }
+
+        function releaseAllKeys() {
+            for (const id of Array.from(heldKeys.keys())) releaseKey(id);
+        }
+
+        window.addEventListener('pointerup', (e) => releaseKey('p:' + e.pointerId));
+        window.addEventListener('pointercancel', (e) => releaseKey('p:' + e.pointerId));
+        window.addEventListener('blur', () => { releaseAllKeys(); setPedal(false); });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            // Đang gõ chữ trong ô dán nốt / ô chọn thì không biến phím thành tiếng đàn
+            const tag = e.target && e.target.tagName;
+            if (tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'INPUT' && !['checkbox', 'range', 'button'].includes(e.target.type))) return;
+            if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) setPedal(true); return; }
+            if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                baseMidi = Math.max(BASE_MIN, Math.min(BASE_MAX, baseMidi + (e.code === 'ArrowLeft' ? -12 : 12)));
+                refreshKeyLabels();
+                return;
+            }
+            if (e.repeat) return;
+            const m = midiForCode(e.code);
+            if (m !== null) pressKey('k:' + e.code, m, 0.8);
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') { setPedal(false); return; }
+            releaseKey('k:' + e.code);
+        });
+
+        // =====================================================================
+        // PHẦN 3: CẦU NỐI SANG C++ (WebAssembly)
+        // =====================================================================
+        let cppGetFreq, cppGetTarget, cppCheckInput, cppGetScore, cppLoadSong;
+        let cppGetLength = null, cppGetStep = null, cppReset = null;
+        let engineReady = false;
+
+        function initCppEngine() {
+            if (engineReady) return;
+            cppGetFreq    = Module.cwrap('getFrequencyFromMidi', 'number', ['number']);
+            cppGetTarget  = Module.cwrap('getTargetMidiNote', 'number', []);
+            cppCheckInput = Module.cwrap('checkUserInput', 'number', ['number']);
+            cppGetScore   = Module.cwrap('getScore', 'number', []);
+            cppLoadSong   = Module.cwrap('loadCustomSong', null, ['number', 'number']);
+            if (typeof Module._getSongLength === 'function') {
+                cppGetLength = Module.cwrap('getSongLength', 'number', []);
+                cppGetStep   = Module.cwrap('getCurrentStep', 'number', []);
+                cppReset     = Module.cwrap('resetSong', null, []);
+            }
+            engineReady = true;
+            setText('engineWarn', '');
+            updateUI();
+        }
+
+        setTimeout(() => {
+            if (!engineReady) setText('engineWarn', () => tr('engineFail'));
+        }, 4000);
+
+        function scrollToKey(el) {
+            const w = document.getElementById('pianoWrap');
+            const left = el.offsetLeft, right = left + el.offsetWidth;
+            if (left < w.scrollLeft + 60 || right > w.scrollLeft + w.clientWidth - 60) {
+                w.scrollTo({ left: left - w.clientWidth / 2 + el.offsetWidth / 2, behavior: 'smooth' });
+            }
+        }
+
+        // Lăn con lăn chuột trên đàn = cuộn đàn qua trái/phải (mượt, giữ Shift hoặc lăn ngang đều dùng được)
+        (function () {
+            const w = document.getElementById('pianoWrap');
+            let target = null, raf = 0;
+            const clampX = (v) => Math.max(0, Math.min(w.scrollWidth - w.clientWidth, v));
+            const glide = () => {
+                const d = target - w.scrollLeft;
+                if (Math.abs(d) < 1) { w.scrollLeft = target; raf = 0; return; }
+                w.scrollLeft += d * 0.25;
+                raf = requestAnimationFrame(glide);
+            };
+            w.addEventListener('wheel', (e) => {
+                if (e.ctrlKey) return;                                    // Ctrl + lăn = phóng to trình duyệt, để nguyên
+                if (w.scrollWidth <= w.clientWidth) return;
+                e.preventDefault();
+                const unit = e.deltaMode === 1 ? 40 : (e.deltaMode === 2 ? w.clientWidth : 1);
+                const dx = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
+                target = clampX((raf ? target : w.scrollLeft) + dx * 1.6);
+                if (!raf) raf = requestAnimationFrame(glide);
+            }, { passive: false });
+        })();
+
+        function setProgress(step, total) {
+            document.getElementById('progressText').innerText = `${step}/${total}`;
+            document.getElementById('progressBar').style.width = (total ? (step / total) * 100 : 0) + '%';
+        }
+
+        function updateUI() {
+            if (!engineReady) return;
+            document.querySelectorAll('.key.hint, .key.due').forEach(k => k.classList.remove('hint', 'due'));
+            setText('instruction', () => tr('welcome'));
+            if (practiceActive && practiceIdx < songEvents.length) {
+                // sáng tất cả các phím còn lại của bước hiện tại (một nốt, hoặc cả hợp âm)
+                const gi = songEvents[practiceIdx].g;
+                for (let j = practiceIdx; j < songEvents.length && songEvents[j].g === gi; j++) {
+                    const el = keyEls[songEvents[j].midi];
+                    if (el) el.classList.add('hint');
+                }
+                const targetMidi = songEvents[practiceIdx].midi, targetEl = keyEls[targetMidi];
+                if (targetEl) {
+                    // Tự đổi quãng tám phím tắt để nốt cần bấm luôn có phím tương ứng
+                    if (targetMidi < baseMidi || targetMidi > baseMidi + KEY_SPAN) {
+                        baseMidi = Math.max(BASE_MIN, Math.min(BASE_MAX, Math.floor(targetMidi / 12) * 12));
+                        refreshKeyLabels();
+                    }
+                    scrollToKey(targetEl);
+                }
+            }
+            document.getElementById('score').innerText = cppGetScore();
+            if (!practiceActive) {
+                document.getElementById('progressText').innerText = '-';
+                document.getElementById('progressBar').style.width = '0%';
+            } else setProgress(Math.min(practiceIdx, songEvents.length), songEvents.length);
+        }
+
+        function flashKey(keyEl, cls, ms) {
+            if (!keyEl) return;
+            keyEl.classList.add(cls);
+            setTimeout(() => keyEl.classList.remove(cls), ms);
+        }
+
+        // ----- Chấm nhịp (JavaScript): so giờ bấm với nhịp của bài -----
+        let practiceIdx = 0, anchorMs = 0, dueTimer = null;
+        let rhythmStats = { perfect: 0, good: 0, total: 0 };
+        const rhythmOn = () => document.getElementById('rhythmOn').checked;
+        const currentSpeed = () => parseFloat(document.getElementById('speedSel').value) || 1;
+        function showRhythm(v) { setText('rhythmInfo', typeof v === 'function' ? v : () => v); }
+
+        function resetRhythm() {
+            practiceIdx = 0; anchorMs = 0;
+            rhythmStats = { perfect: 0, good: 0, total: 0 };
+            clearTimeout(dueTimer);
+            showRhythm('');
+        }
+
+        // Thời điểm (ms) mà nốt thứ i nên được bấm, tính từ mốc bắt nhịp
+        function expectedMs(i) {
+            return anchorMs + (songEvents[i].start - songEvents[0].start) * 1000 / currentSpeed();
+        }
+
+        // Gọi ngay sau khi bấm ĐÚNG nốt thứ practiceIdx
+        function judgeRhythm() {
+            const i = practiceIdx;
+            if (i >= songEvents.length) return;
+            const now = performance.now();
+            if (i === 0) {
+                anchorMs = now;
+                rhythmStats = { perfect: 0, good: 0, total: 0 };
+                showRhythm(() => tr('rhStart'));
+                return;
+            }
+            if (!anchorMs) { // vừa bật chế độ nhịp giữa chừng
+                anchorMs = now - (songEvents[i].start - songEvents[0].start) * 1000 / currentSpeed();
+                showRhythm(() => tr('rhAnchor'));
+                return;
+            }
+            const diff = (now - expectedMs(i)) / 1000;
+            const ad = Math.abs(diff);
+            rhythmStats.total++;
+            let lk;
+            if (ad <= 0.10) { rhythmStats.perfect++; lk = 'rhPerfect'; }
+            else if (ad <= 0.22) { rhythmStats.good++; lk = diff < 0 ? 'rhSlightEarly' : 'rhSlightLate'; }
+            else lk = diff < 0 ? 'rhEarly' : 'rhLate';
+            if (diff > 1.0) anchorMs += diff * 1000;   // dừng lâu thì bắt nhịp lại từ đây
+            const pct = Math.round(100 * rhythmStats.perfect / rhythmStats.total);
+            const ms = `${diff >= 0 ? '+' : ''}${Math.round(diff * 1000)}`;
+            showRhythm(() => tr('rhLine', tr(lk), ms, pct));
+        }
+
+        // Tới đúng lúc cần bấm thì phím mục tiêu sáng viền vàng
+        function scheduleDueCue() {
+            clearTimeout(dueTimer);
+            const i = practiceIdx;
+            if (!practiceActive || !rhythmOn() || !anchorMs || i <= 0 || i >= songEvents.length) return;
+            const gi = songEvents[i].g;
+            dueTimer = setTimeout(() => {
+                for (let j = practiceIdx; j < songEvents.length && songEvents[j].g === gi; j++) {
+                    const el = keyEls[songEvents[j].midi];
+                    if (el && el.classList.contains('hint')) el.classList.add('due');
+                }
+            }, Math.max(0, expectedMs(i) - performance.now()));
+        }
+
+        // Chấm điểm bài tập (không ảnh hưởng tới việc phát tiếng đàn)
+        const isFirstStep = (i) => i === 0 || !songEvents[i - 1] || songEvents[i - 1].g !== songEvents[i].g;
+        function practiceCheck(midi) {
+            if (!engineReady) return;
+            document.getElementById('freq').innerText = cppGetFreq(midi).toFixed(2);
+            if (!practiceActive) return;                     // chế độ chơi tự do: chỉ phát tiếng, không chấm
+            let send = midi;
+            if (practiceMode === 'full' && songEvents[practiceIdx]) {
+                // Hợp âm: bấm các nốt theo thứ tự nào cũng được. Đổi chỗ để nốt vừa bấm đứng ở bước hiện tại,
+                // còn C++ vẫn nhận đúng nốt nó đang chờ.
+                const gi = songEvents[practiceIdx].g;
+                let j = practiceIdx;
+                while (j < songEvents.length && songEvents[j].g === gi && songEvents[j].midi !== midi) j++;
+                if (j < songEvents.length && songEvents[j].g === gi) {
+                    const tmp = songEvents[j]; songEvents[j] = songEvents[practiceIdx]; songEvents[practiceIdx] = tmp;
+                    send = cppGetTarget();
+                }
+            }
+            const result = cppCheckInput(send);
+            if (result === 1 || result === 2) {
+                if (rhythmOn() && isFirstStep(practiceIdx)) judgeRhythm();   // chỉ chấm nhịp ở nốt đầu của mỗi hợp âm
+                practiceIdx++;
+            }
+            if (result === 1) {
+                updateUI();
+                scheduleDueCue();
+            } else if (result === 2) {
+                clearTimeout(dueTimer);
+                if (rhythmOn() && rhythmStats.total) { const rp = rhythmStats.perfect, rt = rhythmStats.total; showRhythm(() => tr('rhFinal', rp, rt)); }
+                practiceIdx = 0; anchorMs = 0;
+                setText('instruction', () => tr('done'));
+                document.getElementById('score').innerText = cppGetScore();
+                const totalNotes = cppGetLength ? cppGetLength() : currentMidis.length;
+                setProgress(totalNotes, totalNotes);
+                setTimeout(updateUI, 1800);
+            } else {
+                flashKey(keyEls[midi], 'wrong', 200);
+                document.getElementById('score').innerText = cppGetScore();
+            }
+        }
+
+        // =====================================================================
+        // PHẦN 4: PHIÊN ÂM NHẠC (MP3/WAV/M4A → NỐT + HỢP ÂM)
+        // =====================================================================
+// ==TRANSCRIBE-START==
+const TRX = (function () {
+    const SR = 22050, WIN_LONG = 4096, WIN_SHORT = 2048, HOP = 256;
+    const BAND_LO = 36, BAND_HI = 119, NB = BAND_HI - BAND_LO + 1;   // dải bán cung dùng để phân tích
+    const MIDI_LO = 45, MIDI_HI = 108, NN = MIDI_HI - MIDI_LO + 1;   // nốt có thể nhận ra: A2 → C8
+    const OFFS = [0, 12, 19, 24, 28, 31, 34, 36];                    // vị trí các hài âm 1..8 (đơn vị bán cung)
+    const HW = [1, 0.85, 0.7, 0.55, 0.45, 0.35, 0.3, 0.25];
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+
+    function makeFFT(n) {
+        const levels = Math.round(Math.log2(n));
+        const rev = new Uint32Array(n);
+        for (let i = 0; i < n; i++) { let x = i, r = 0; for (let b = 0; b < levels; b++) { r = (r << 1) | (x & 1); x >>= 1; } rev[i] = r; }
+        const cs = new Float32Array(n / 2), sn = new Float32Array(n / 2);
+        for (let i = 0; i < n / 2; i++) { cs[i] = Math.cos(2 * Math.PI * i / n); sn[i] = Math.sin(2 * Math.PI * i / n); }
+        return function (re, im) {
+            for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+            for (let size = 2; size <= n; size <<= 1) {
+                const half = size >> 1, step = n / size;
+                for (let i = 0; i < n; i += size) {
+                    for (let j = i, k = 0; j < i + half; j++, k += step) {
+                        const l = j + half;
+                        const tr = re[l] * cs[k] + im[l] * sn[k];
+                        const ti = im[l] * cs[k] - re[l] * sn[k];
+                        re[l] = re[j] - tr; im[l] = im[j] - ti; re[j] += tr; im[j] += ti;
+                    }
+                }
+            }
+        };
+    }
+
+    // ---- 1) Phổ theo bán cung (cửa sổ dài: nhìn rõ cao độ, nhiều nốt cùng lúc) ----
+    async function bandSpec(x, WIN, prog, p0, p1, bLimit) {
+        bLimit = bLimit || NB;
+        const nF = Math.floor(x.length / HOP) + 1;
+        const fft = makeFFT(WIN), df = SR / WIN;
+        const win = new Float32Array(WIN);
+        for (let i = 0; i < WIN; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / WIN);
+        const klo = new Int32Array(NB), khi = new Int32Array(NB);
+        let kmax = 0;
+        for (let b = 0; b < bLimit; b++) {
+            const f = hz(BAND_LO + b);
+            khi[b] = Math.min(WIN / 2 - 1, Math.ceil(f * Math.pow(2, 0.5 / 12) / df));
+            klo[b] = Math.min(khi[b], Math.max(1, Math.floor(f * Math.pow(2, -0.5 / 12) / df)));
+            if (khi[b] > kmax) kmax = khi[b];
+        }
+        const B = new Float32Array(nF * NB);
+        const re = new Float32Array(WIN), im = new Float32Array(WIN), mag = new Float32Array(WIN / 2);
+        for (let t = 0; t < nF; t++) {
+            const s0 = t * HOP - WIN / 2;
+            for (let i = 0; i < WIN; i++) { const idx = s0 + i; re[i] = (idx >= 0 && idx < x.length) ? x[idx] * win[i] : 0; im[i] = 0; }
+            fft(re, im);
+            for (let k = 0; k <= kmax; k++) mag[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+            const o = t * NB;
+            for (let b = 0; b < bLimit; b++) {
+                let m = 0;
+                for (let k = klo[b]; k <= khi[b]; k++) if (mag[k] > m) m = mag[k];
+                B[o + b] = m * (4096 / WIN);          // quy về cùng thang với cửa sổ 4096
+            }
+            if (t % 60 === 0) { if (prog) prog(p0 + (p1 - p0) * t / nF); await tick(); }
+        }
+        return { B, nF };
+    }
+
+    // ---- 2) Nén biên độ + "làm trắng" (bỏ phần nền, tiếng ồn dải rộng như trống) ----
+    function whiten(B, nF) {
+        const sample = [];
+        for (let t = 0; t < nF; t += 4) for (let b = MIDI_LO - BAND_LO; b < NB - 40; b++) sample.push(B[t * NB + b]);
+        sample.sort((a, b) => a - b);
+        const ref = sample.length ? Math.max(sample[Math.floor(0.97 * sample.length)], 1e-9) : 1e-9;
+        const W = new Float32Array(nF * NB);
+        const c = new Float32Array(NB), ps = new Float32Array(NB + 1);
+        for (let t = 0; t < nF; t++) {
+            const o = t * NB;
+            for (let b = 0; b < NB; b++) { c[b] = Math.log1p(40 * B[o + b] / ref); ps[b + 1] = ps[b] + c[b]; }
+            for (let b = 0; b < NB; b++) {
+                const a = Math.max(0, b - 8), z = Math.min(NB, b + 9);
+                const avg = (ps[z] - ps[a]) / (z - a);
+                const v = c[b] - 0.85 * avg;
+                W[o + b] = v > 0 ? v : 0;
+            }
+        }
+        return W;
+    }
+
+    // ---- 3) Tìm nhiều cao độ trong từng khung: chọn nốt mạnh nhất → trừ hài âm của nó → lặp lại ----
+    function multiPitch(W, nF) {
+        const act = new Float32Array(nF * NN);
+        const res = new Float32Array(NB);
+        for (let t = 0; t < nF; t++) {
+            const o = t * NB;
+            let mx0 = 0;
+            for (let b = 0; b < NB; b++) { res[b] = W[o + b]; if (res[b] > mx0) mx0 = res[b]; }
+            if (mx0 < 0.3) continue;                                  // khung im lặng
+            let s0 = 0;
+            for (let iter = 0; iter < 5; iter++) {
+                let best = -1, bs = 0;
+                for (let m = MIDI_LO; m <= MIDI_HI; m++) {
+                    let s = 0, present = 0, avail = 0;
+                    for (let h = 0; h < 8; h++) {
+                        const p = m + OFFS[h];
+                        if (p > BAND_HI) break;
+                        const v = res[p - BAND_LO];
+                        s += HW[h] * v;
+                        if (h < 4) { avail++; if (v > 0.2 * mx0) present++; }
+                    }
+                    const high = avail < 3;                              // nốt rất cao: hài âm đã vượt dải phân tích
+                    if (present < (high ? 1 : 2)) continue;
+                    if (res[m - BAND_LO] < (high ? 0.25 : 0.12) * mx0) continue;   // thiếu cả âm gốc thì bỏ
+                    if (s > bs) { bs = s; best = m; }
+                }
+                if (best < 0) break;
+                if (iter === 0) s0 = bs; else if (bs < 0.3 * s0) break;
+                act[t * NN + (best - MIDI_LO)] = bs;
+                for (let h = 0; h < 8; h++) {
+                    const p = best + OFFS[h] - BAND_LO;
+                    if (p >= NB) break;
+                    res[p] *= 0.1;
+                    const nb = h === 0 ? (best < 60 ? 0.35 : 0.7) : 0.6;
+                    if (p > 0) res[p - 1] *= nb;
+                    if (p < NB - 1) res[p + 1] *= nb;
+                }
+            }
+        }
+        return act;
+    }
+
+    // ---- 4) Phát hiện thời điểm bắt đầu nốt (cửa sổ ngắn: chính xác về nhịp) + ước lượng tempo ----
+    async function onsets(x, prog) {
+        const W2 = 1024, df = SR / W2;
+        const fft = makeFFT(W2);
+        const win = new Float32Array(W2);
+        for (let i = 0; i < W2; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / W2);
+        const nF = Math.floor(x.length / HOP) + 1;
+        const kLo = Math.floor(100 / df), kHi = Math.floor(5000 / df);
+        const prev = new Float32Array(W2 / 2), env = new Float32Array(nF);
+        const LM = new Float32Array(nF * (W2 / 2));
+        const re = new Float32Array(W2), im = new Float32Array(W2);
+        for (let t = 0; t < nF; t++) {
+            const s0 = t * HOP - W2 / 2;
+            for (let i = 0; i < W2; i++) { const idx = s0 + i; re[i] = (idx >= 0 && idx < x.length) ? x[idx] * win[i] : 0; im[i] = 0; }
+            fft(re, im);
+            let flux = 0;
+            const lo = t * (W2 / 2);
+            for (let k = 1; k < W2 / 2; k++) {
+                const lm = Math.log1p(20 * Math.sqrt(re[k] * re[k] + im[k] * im[k]));
+                LM[lo + k] = lm;
+                if (k >= kLo && k <= kHi) { const d = lm - prev[k]; if (d > 0) flux += d; }
+                prev[k] = lm;
+            }
+            env[t] = flux;
+            if (t % 200 === 0) { if (prog) prog(0.5 + 0.1 * t / nF); await tick(); }
+        }
+        // trừ trung bình cục bộ rồi chọn đỉnh
+        const norm = new Float32Array(nF);
+        const ps = new Float32Array(nF + 1);
+        for (let t = 0; t < nF; t++) ps[t + 1] = ps[t] + env[t];
+        for (let t = 0; t < nF; t++) {
+            const a = Math.max(0, t - 10), z = Math.min(nF, t + 11);
+            const v = env[t] - (ps[z] - ps[a]) / (z - a);
+            norm[t] = v > 0 ? v : 0;
+        }
+        let mean = 0, sq = 0;
+        for (let t = 0; t < nF; t++) { mean += norm[t]; sq += norm[t] * norm[t]; }
+        mean /= nF; const sd = Math.sqrt(Math.max(0, sq / nF - mean * mean));
+        const thr = mean + 0.5 * sd;
+        const times = [];
+        { let e0 = 0; for (let i = 0; i < Math.min(x.length, 1100); i++) e0 += x[i] * x[i]; if (Math.sqrt(e0 / 1100) > 0.01) times.push(0); }
+        for (let t = 2; t < nF - 2; t++) {
+            if (norm[t] < thr) continue;
+            let ok = true;
+            for (let k = -3; k <= 3; k++) { const u = t + k; if (u >= 0 && u < nF && norm[u] > norm[t]) { ok = false; break; } }
+            if (ok) times.push(t * HOP / SR);
+        }
+        return { times, env: norm, LM, df: df, half: W2 / 2 };
+    }
+
+    function estimateBpm(env) {
+        const fps = SR / HOP, n = env.length;
+        let m = 0; for (let i = 0; i < n; i++) m += env[i]; m /= n;
+        const lagMin = Math.floor(fps * 60 / 180), lagMax = Math.ceil(fps * 60 / 60);
+        const ac = new Float32Array(2 * lagMax + 2);
+        for (let lag = Math.floor(lagMin / 2); lag <= 2 * lagMax; lag++) {
+            let s = 0;
+            for (let i = 0; i + lag < n; i++) s += (env[i] - m) * (env[i + lag] - m);
+            ac[lag] = s / (n - lag);
+        }
+        let best = 0, bs = -Infinity;
+        for (let lag = lagMin; lag <= lagMax; lag++) {
+            const bpm = 60 * fps / lag;
+            const prior = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 105) / 0.7, 2));
+            const s = (ac[lag] + 0.5 * ac[2 * lag] + 0.25 * ac[Math.round(lag / 2)]) * prior;
+            if (s > bs) { bs = s; best = bpm; }
+        }
+        return Math.round(best);
+    }
+
+    // ---- 5) Gom các khung thành nốt (tách nốt lặp bằng năng lượng thật, bù độ trễ của cửa sổ dài) ----
+    function trackNotes(act, nF, ON) {
+        const onsetTimes = ON.times;
+        const vals = [];
+        for (let i = 0; i < act.length; i++) if (act[i] > 0) vals.push(act[i]);
+        if (!vals.length) return [];
+        vals.sort((a, b) => a - b);
+        const ampRef = vals[Math.floor(0.95 * vals.length)];
+        const thr = 0.15 * ampRef;
+        const fr = (t) => t * HOP / SR;
+        const tf = (T) => Math.max(0, Math.min(nF - 1, Math.round(T * SR / HOP)));
+        const notes = [];
+        // Đánh lại nốt: hầu hết các hài âm của đúng nốt đó cùng bật lên quanh thời điểm onset
+        const reattack = (m, o, others) => {
+            const f = hz(m), tb = tf(o - 0.035), ta = tf(o + 0.012);
+            // mức tăng "chung" của toàn bộ phổ tại onset này (trung vị) -> chỉ tính phần tăng riêng của nốt
+            const ds = [];
+            for (let kk = 5; kk < 230; kk++) ds.push(ON.LM[ta * ON.half + kk] - ON.LM[tb * ON.half + kk]);
+            ds.sort((p, q) => p - q);
+            const med = ds[ds.length >> 1];
+            let cnt = 0, tot = 0;
+            for (let h = 1; h <= 6; h++) {
+                const fh = f * h;
+                if (fh > 9000) break;
+                // hài âm này trùng với hài âm của một nốt khác vừa bắt đầu -> không dùng làm bằng chứng
+                let shared = false;
+                for (const m2 of others) for (let h2 = 1; h2 <= 8; h2++) if (Math.abs(12 * Math.log2(hz(m2) * h2 / fh)) < 0.6) shared = true;
+                if (shared) continue;
+                tot++;
+                const kc = Math.round(fh / ON.df);
+                let d = -9;
+                for (let kk = kc - 1; kk <= kc + 1; kk++) d = Math.max(d, ON.LM[ta * ON.half + kk] - ON.LM[tb * ON.half + kk]);
+                if (d - 0.7 * med > 0.3) cnt++;
+            }
+            if (tot >= (m >= 84 ? 2 : 3) && cnt >= Math.max(2, Math.ceil(0.6 * tot))) return true;
+            // Bằng chứng thứ hai: nốt đang ngân bị "đứt" một chút rồi bật lại (đánh lại hợp âm khi vẫn còn ngân)
+            let c2 = 0, t2 = 0;
+            const fa = (T) => Math.max(0, Math.min(nF - 1, Math.round(T * SR / HOP)));
+            for (let h = 1; h <= 6; h++) {
+                const fh = f * h;
+                if (fh > 9000) break;
+                let shared = false;
+                for (const m2 of others) for (let h2 = 1; h2 <= 8; h2++) if (Math.abs(12 * Math.log2(hz(m2) * h2 / fh)) < 0.6) shared = true;
+                if (shared) continue;
+                t2++;
+                const kc = Math.round(fh / ON.df);
+                const v = (fi) => Math.max(ON.LM[fi * ON.half + kc - 1], ON.LM[fi * ON.half + kc], ON.LM[fi * ON.half + kc + 1]);
+                let pre = -9, lo = 99, post = -9;
+                for (let q = fa(o - 0.45); q <= fa(o - 0.12); q++) pre = Math.max(pre, v(q));
+                for (let q = fa(o - 0.12); q <= fa(o); q++) lo = Math.min(lo, v(q));
+                for (let q = fa(o + 0.01); q <= fa(o + 0.08); q++) post = Math.max(post, v(q));
+                if (pre - lo > 0.5 && post - lo > 0.5) c2++;
+            }
+            return t2 >= (m >= 84 ? 2 : 3) && c2 >= Math.max(2, Math.ceil(0.6 * t2));
+        };
+        // Lượt 1: các đoạn có tiếng của từng nốt (chưa tách nốt lặp)
+        const base = [];
+        for (let k = 0; k < NN; k++) {
+            const a = (t) => (t >= 0 && t < nF ? act[t * NN + k] : 0);
+            const low = (MIDI_LO + k) < 66 ? 2 : 1;          // nốt trầm dùng cửa sổ dài hơn -> độ trễ gấp đôi
+            const segs = [];
+            let t = 0;
+            while (t < nF) {
+                if (a(t) >= thr) { let e = t; while (e < nF && a(e) >= thr) e++; segs.push([t, e]); t = e; } else t++;
+            }
+            if (!segs.length) continue;
+            const merged = [segs[0]];
+            for (let i = 1; i < segs.length; i++) {
+                const last = merged[merged.length - 1];
+                if (segs[i][0] - last[1] <= 4) last[1] = segs[i][1]; else merged.push(segs[i]);
+            }
+            for (const [s, e] of merged) {
+                if (e - s < 6) continue;
+                let pk = 0; for (let u = s; u < e; u++) pk = Math.max(pk, a(u));
+                let start = fr(s) + 0.045 * low, bestD = 0.09 * low;
+                for (const o of onsetTimes) { const d = Math.abs(o - start); if (d < bestD) { bestD = d; start = o; } }
+                base.push({ m: MIDI_LO + k, start, end: Math.max(start + 0.06, fr(e) - 0.04 * low), pk });
+            }
+        }
+        // Lượt 2: tìm các điểm "đánh lại nốt" (chỉ tính bằng chứng ở hài âm không trùng với nốt khác mới bắt đầu)
+        const cand = [];
+        for (const b of base) {
+            let lastS = b.start;
+            for (const o of onsetTimes) {
+                if (o < lastS + 0.12 || o > b.end - 0.06) continue;
+                const others = base.filter(q => q !== b && Math.abs(q.start - o) < 0.07).map(q => q.m);
+                if (reattack(b.m, o, others)) { cand.push({ b, o }); lastS = o; }
+            }
+        }
+        // Nốt trầm (đệm / hợp âm) thường đổi cùng lúc: một nốt trầm đứng riêng bị "đánh lại" giữa lúc các nốt khác vẫn ngân là đáng ngờ
+        const accepted = cand.filter(c => {
+            if (c.b.m >= 60) return true;
+            let together = 0;
+            for (const q of cand) if (q !== c && q.b.m < 60 && Math.abs(q.o - c.o) < 0.07) together++;
+            for (const q of base) if (q.m < 60 && q.m !== c.b.m && Math.abs(q.start - c.o) < 0.07) together++;
+            return together >= 1;
+        });
+        for (const b of base) {
+            const starts = [b.start].concat(accepted.filter(c => c.b === b).map(c => c.o));
+            for (let c = 0; c < starts.length; c++) {
+                const st = starts[c];
+                const en = c + 1 < starts.length ? starts[c + 1] - 0.02 : b.end;
+                if (b.m < 60 && en - st < 0.2) continue;           // nốt đệm quá ngắn: nhiều khả năng là nhiễu
+                notes.push({ m: b.m, start: st, end: Math.max(st + 0.06, en), amp: b.pk, vel: Math.max(0.3, Math.min(1, 0.3 + 0.7 * b.pk / ampRef)) });
+            }
+        }
+        return notes;
+    }
+
+    // ---- 6) Dọn dẹp: bỏ bass, bỏ nốt "ma" (hài âm), gom hợp âm, giới hạn số nốt ----
+    function cleanup(notes, opts) {
+        if (opts.dropBass) notes = notes.filter(n => n.m >= 48);
+        notes = notes.filter(n => n.m < 96 || (n.vel >= 0.4 && n.end - n.start >= 0.08));   // nốt cực cao: bỏ nốt yếu/quá ngắn (thường là nhiễu)
+        notes.sort((p, q) => p.start - q.start || p.m - q.m);
+        const keep = notes.filter((a) => {
+            for (const b of notes) {
+                if (b === a || Math.abs(a.start - b.start) > 0.08) continue;
+                const d = a.m - b.m;
+                const lim = d === 12 ? 0.55 : d === 19 ? 0.45 : d === 24 ? 0.4 : d === 28 ? 0.35 : d === 31 ? 0.3 : d === 36 ? 0.3 : 0;
+                if (lim && a.amp < lim * b.amp) return false;
+            }
+            return true;
+        });
+        const out = [];
+        let i = 0;
+        while (i < keep.length) {
+            let j = i + 1;
+            while (j < keep.length && keep[j].start - keep[i].start <= 0.06) j++;
+            let grp = keep.slice(i, j);
+            if (grp.length > 4) {
+                const top = grp.reduce((p, q) => (q.m > p.m ? q : p));
+                const rest = grp.filter(n => n !== top).sort((p, q) => q.amp - p.amp).slice(0, 3);
+                grp = [top].concat(rest);
+            }
+            const st = grp.reduce((s, n) => s + n.start, 0) / grp.length;   // cả hợp âm cùng một thời điểm
+            for (const n of grp) out.push({ midi: n.m, start: st, dur: Math.max(0.08, n.end - st), vel: n.vel });
+            i = j;
+        }
+        out.sort((p, q) => p.start - q.start || p.midi - q.midi);
+        return out;
+    }
+
+    // ---- 7) CĂN NHỊP: tìm một lưới nhịp chung (tempo + pha), bám theo trôi nhịp, ép MỌI nốt (giai điệu + đệm) vào cùng lưới ----
+    function fitGrid(events, hint) {
+        const pts = [];
+        for (const e of events) {
+            const w = 0.5 + e.vel;
+            const last = pts[pts.length - 1];
+            if (last && e.start - last.t <= 0.06) { last.t = (last.t * last.w + e.start * w) / (last.w + w); last.w += w; }
+            else pts.push({ t: e.start, w });
+        }
+        if (pts.length < 8) return null;
+        // lưới móc đơn (nửa phách): r1 = độ khớp ở nốt móc đơn, r2 = độ khớp ở nốt móc kép
+        const fit = (bpm) => {
+            const g = 30 / bpm;
+            let c1 = 0, s1 = 0, c2 = 0, s2 = 0, W = 0;
+            for (const p of pts) {
+                const a = 2 * Math.PI * p.t / g;
+                c1 += p.w * Math.cos(a); s1 += p.w * Math.sin(a);
+                c2 += p.w * Math.cos(2 * a); s2 += p.w * Math.sin(2 * a);
+                W += p.w;
+            }
+            return { sc: Math.hypot(c1, s1) / W + 0.35 * Math.hypot(c2, s2) / W, ph: Math.atan2(s1, c1) / (2 * Math.PI) * g };
+        };
+        let best = 0, bs = -1;
+        for (let bpm = 50; bpm <= 190; bpm += 0.25) {
+            const prior = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 100) / 0.6, 2));
+            const near = hint && Math.abs(Math.log2(bpm / hint)) < 0.04 ? 1.12 : 1;
+            const s = fit(bpm).sc * prior * near;
+            if (s > bs) { bs = s; best = bpm; }
+        }
+        let rb = best, rs = -1;                                   // tinh chỉnh tempo (độ trôi nhịp nhỏ cũng lệch dần)
+        for (let bpm = best - 0.6; bpm <= best + 0.6; bpm += 0.02) { const s = fit(bpm).sc; if (s > rs) { rs = s; rb = bpm; } }
+        return { bpm: rb, ph: fit(rb).ph };
+    }
+
+    function quantize(events, hint) {
+        const evs = events.slice().sort((a, b) => a.start - b.start || a.midi - b.midi);
+        const grid = fitGrid(evs, hint);
+        if (!grid) return null;
+        const g8 = 30 / grid.bpm, g16 = g8 / 2, ph = grid.ph;
+        let o = 0;                                                // độ lệch hiện tại so với lưới (tự bám theo khi nhạc nhanh/chậm dần)
+        const out = [];
+        let i = 0;
+        while (i < evs.length) {
+            let j = i + 1;
+            while (j < evs.length && evs[j].start - evs[i].start <= 0.06) j++;
+            const grp = evs.slice(i, j);
+            const tg = grp.reduce((s, n) => s + n.start, 0) / grp.length;
+            const pos8 = (tg - ph - o) / g8, k8 = Math.round(pos8), err = (pos8 - k8) * g8;
+            let s16;
+            if (Math.abs(err) <= 0.2 * g8) { s16 = 2 * k8; o += 0.3 * err; }          // nằm sát phách/nửa phách -> bám lưới
+            else if (grp.every(n => n.midi < 60)) s16 = 2 * k8;                      // nốt đệm/trầm chỉ vào phách hoặc nửa phách (bị trễ do cửa sổ phân tích dài)
+            else s16 = Math.round((tg - ph - o) / g16);                              // lệch hẳn -> nốt móc kép
+            for (const n of grp) {
+                let e16 = Math.round((n.start + n.dur - ph - o) / g16);
+                e16 = Math.max(s16 + 1, Math.min(s16 + 32, e16));
+                out.push({ midi: n.midi, s: s16, e: e16, vel: n.vel, o });
+            }
+            i = j;
+        }
+        // cùng một phím: không cho chồng lên nhau, bỏ nốt trùng
+        const byMidi = new Map();
+        for (const n of out) { if (!byMidi.has(n.midi)) byMidi.set(n.midi, []); byMidi.get(n.midi).push(n); }
+        const fin = [];
+        for (const list of byMidi.values()) {
+            list.sort((a, b) => a.s - b.s);
+            for (let q = 0; q < list.length; q++) {
+                const n = list[q];
+                if (q > 0 && list[q - 1].s === n.s) continue;
+                const nx = list[q + 1];
+                let e = n.e;
+                if (nx && nx.s > n.s && e > nx.s) e = nx.s;
+                fin.push({ midi: n.midi, s: n.s, e: Math.max(n.s + 1, e), vel: n.vel, o: n.o });
+            }
+        }
+        if (!fin.length) return null;
+        // thời gian = vị trí trên lưới + độ lệch bám nhịp tại thời điểm đó -> khớp từng giây với file gốc (không bị lệch dần khi tempo thật hơi đổi),
+        // trong khi mọi nốt cùng một lúc (giai điệu + đệm) vẫn có đúng cùng thời điểm
+        const t0 = fin.reduce((m, n) => Math.min(m, ph + n.s * g16 + n.o), Infinity);
+        const res = fin.map(n => ({ midi: n.midi, start: Math.max(0, ph + n.s * g16 + n.o - t0), dur: (n.e - n.s) * g16 * 0.96, vel: n.vel }));
+        res.sort((a, b) => a.start - b.start || a.midi - b.midi);
+        return { events: res, bpm: Math.round(grid.bpm * 10) / 10 };
+    }
+
+    // x: Float32Array đơn kênh, 22050 Hz
+    async function transcribe(x, opts, prog) {
+        opts = opts || {};
+        if (prog) prog(0.02);
+        const { B, nF } = await bandSpec(x, WIN_LONG, prog, 0.05, 0.25);
+        const LOWB = 66 - BAND_LO;
+        const BL = (await bandSpec(x, 8192, prog, 0.25, 0.5, LOWB)).B;   // cửa sổ rất dài cho nốt trầm: tách hợp âm rõ hơn
+        for (let t = 0; t < nF; t++) for (let b = 0; b < LOWB; b++) B[t * NB + b] = BL[t * NB + b];
+        const W = whiten(B, nF);
+        if (prog) prog(0.5);
+        const act = multiPitch(W, nF);
+        await tick();
+        const on = await onsets(x, prog);
+        if (prog) prog(0.8);
+        const notes = trackNotes(act, nF, on);
+        let events = cleanup(notes, { dropBass: opts.dropBass !== false });
+        let bpm = events.length > 8 ? estimateBpm(on.env) : 0;
+        if (opts.quantize !== false && events.length >= 8) {          // căn nhịp: giai điệu + đệm cùng một tempo, cùng một lưới
+            const q = quantize(events, bpm);
+            if (q) { events = q.events; bpm = Math.round(q.bpm); }
+        }
+        if (prog) prog(1);
+        return { events, bpm, raw: opts.keepRaw ? notes : undefined };
+    }
+
+    return { SR, transcribe, quantize };
+})();
+// ==TRANSCRIBE-END==
+
+        // =====================================================================
+        // PHẦN 5: NẠP BÀI VÀO C++ + NGHE MẪU
+        // =====================================================================
+        // arrEvents: TOÀN BỘ nốt của bản (đa âm) -> dùng để "Nghe mẫu".
+        // songEvents: các BƯỚC luyện tập (mỗi bước = một nốt hoặc một hợp âm), đồng bộ với bộ đếm C++.
+        let arrEvents = [], arrLabel = '', arrSuffix = () => '';
+        let songEvents = [], currentMidis = [];
+        let practiceActive = false, practiceMode = 'melody';   // mặc định vào là chơi tự do
+
+        function groupEvents(evs) {
+            const sorted = evs.slice().sort((a, b) => a.start - b.start || a.midi - b.midi);
+            const groups = [];
+            for (const e of sorted) {
+                const g = groups[groups.length - 1];
+                if (g && e.start - g.start <= 0.07) g.notes.push(e);
+                else groups.push({ start: e.start, notes: [e] });
+            }
+            return groups;
+        }
+
+        function applyPractice() {
+            if (!engineReady || !arrEvents.length) return false;
+            const groups = groupEvents(arrEvents);
+            const steps = [];
+            groups.forEach((g, gi) => {
+                if (practiceMode === 'full') {
+                    g.notes.slice().sort((a, b) => a.midi - b.midi)
+                        .forEach(n => steps.push({ midi: n.midi, start: g.start, dur: n.dur, vel: n.vel, g: gi }));
+                } else {
+                    // nốt cao nhất trong số các nốt đủ mạnh (nốt "ma" do hài âm thường yếu hơn hẳn nốt thật)
+                    const mv = g.notes.reduce((m, n) => Math.max(m, n.vel), 0);
+                    const strong = g.notes.filter(n => n.vel >= 0.6 * mv);
+                    const top = strong.reduce((p, q) => (q.midi > p.midi ? q : p));
+                    steps.push({ midi: top.midi, start: g.start, dur: top.dur, vel: top.vel, g: gi });
+                }
+            });
+            const midiList = steps.map(st => st.midi);
+            const ptr = Module._malloc(midiList.length * 4);
+            Module.HEAP32.set(midiList, ptr >> 2);
+            cppLoadSong(ptr, midiList.length);
+            Module._free(ptr);
+
+            songEvents = steps;
+            currentMidis = midiList;
+            practiceActive = true;
+            stopDemo();
+            resetRhythm();
+
+            document.getElementById('notePreview').style.display = 'block';
+            const listStr = groups.map(g => {
+                const names = g.notes.slice().sort((a, b) => a.midi - b.midi).map(n => noteName(n.midi));
+                return names.length > 1 ? '[' + names.join('+') + ']' : names[0];
+            }).join(' → ');
+            setText('notePreview', () => tr('preview', groups.length, listStr));
+            const lbl = arrLabel, suf = arrSuffix, cnt = steps.length;
+            setText('songTitle', () => tr('ready', labelText(lbl), cnt) + suf());
+            updateUI();
+            return true;
+        }
+
+        function loadArrangement(events, label, suffix) {
+            arrEvents = events.map(e => ({ midi: e.midi, start: e.start, dur: e.dur, vel: e.vel == null ? 0.75 : e.vel }))
+                              .sort((a, b) => a.start - b.start || a.midi - b.midi);
+            arrLabel = label;
+            arrSuffix = suffix || (() => '');
+            return applyPractice();
+        }
+
+        function goFreePlay() {
+            practiceActive = false;
+            arrEvents = []; songEvents = []; currentMidis = [];
+            stopDemo();
+            resetRhythm();
+            document.getElementById('notePreview').style.display = 'none';
+            setText('notePreview', '');
+            setText('songTitle', () => tr('defaultTitle'));
+            updateUI();
+        }
+
+        // Nghe mẫu: đàn tự chơi lại TOÀN BỘ bản (giai điệu + hợp âm) với đúng nhịp và độ mạnh nhẹ đã trích được
+        let demo = null;
+        function updateDemoBtn() { setText('btnDemo', () => (demo ? tr('demoStop') : tr('demoPlay'))); }
+        function stopDemo() {
+            if (!demo) { updateDemoBtn(); return; }
+            clearInterval(demo.timer);
+            demo.timeouts.forEach(clearTimeout);
+            const now = audioCtx ? audioCtx.currentTime : 0;
+            demo.voices.forEach(v => {
+                if (v.t0 > now) { try { v.gain.disconnect(); } catch (e) { /* bỏ qua */ } }
+                else doRelease(v);
+            });
+            document.querySelectorAll('.key.demo').forEach(k => k.classList.remove('demo'));
+            demo = null;
+            updateDemoBtn();
+        }
+
+        function startDemo() {
+            if (!arrEvents.length) return;
+            const ctx = ensureAudioContext();
+            stopDemo();
+            const sp = currentSpeed();
+            const last = arrEvents.reduce((m, e) => Math.max(m, e.start + e.dur), 0) / sp;
+            demo = { idx: 0, t0: ctx.currentTime + 0.3, voices: [], timeouts: new Set(), end: last, timer: null };
+            updateDemoBtn();
+            const d = demo;
+            const tick = () => {
+                const now = ctx.currentTime;
+                while (d.idx < arrEvents.length) {
+                    const ev = arrEvents[d.idx];
+                    const when = d.t0 + ev.start / sp;
+                    if (when > now + 0.6) break;
+                    const v = playNote(ev.midi, ev.vel, when);
+                    releaseNote(v, when + Math.max(0.15, ev.dur * 0.95 / sp));
+                    d.voices.push(v);
+                    const delay = Math.max(0, (when - now) * 1000);
+                    const el = keyEls[ev.midi];
+                    d.timeouts.add(setTimeout(() => { el.classList.add('demo'); scrollToKey(el); }, delay));
+                    d.timeouts.add(setTimeout(() => el.classList.remove('demo'), delay + Math.min(ev.dur * 1000 / sp, 600)));
+                    d.idx++;
+                }
+                if (now > d.t0 + d.end + 1.5) stopDemo();
+            };
+            tick();
+            d.timer = setInterval(tick, 100);
+        }
+
+        document.getElementById('btnDemo').addEventListener('click', () => { demo ? stopDemo() : startDemo(); });
+
+        function restartSong() {
+            if (!engineReady) return;
+            resetRhythm();
+            if (arrEvents.length) applyPractice(); else updateUI();   // nạp lại bài = về nốt đầu
+        }
+        document.getElementById('btnRestart').addEventListener('click', restartSong);
+        document.getElementById('speedSel').addEventListener('change', restartSong);
+        document.getElementById('rhythmOn').addEventListener('change', () => {
+            anchorMs = 0; clearTimeout(dueTimer); showRhythm('');
+            document.querySelectorAll('.key.due').forEach(k => k.classList.remove('due'));
+        });
+
+        document.getElementById('btnDefault').addEventListener('click', () => {
+            document.getElementById('segPanel').classList.remove('show');
+            document.getElementById('audioPlayer').style.display = 'none';
+            goFreePlay();
+        });
+
+        // =====================================================================
+        // PHẦN 6: CHỌN ĐOẠN NHẠC (SÓNG NHẠC + KÉO CHỌN)
+        // =====================================================================
+        const MAX_SEG = 90;
+        const audioPlayer = document.getElementById('audioPlayer');
+        const wf = document.getElementById('waveform');
+        let loaded = null;           // { buffer, name }
+        let sel = { start: 0, end: 0 };
+        let peaks = null, peaksW = 0, stopAt = null, analyzing = false;
+
+        function fmt(t) {
+            const m = Math.floor(t / 60), s = Math.floor(t % 60);
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function computePeaks(buffer, W) {
+            const data = buffer.getChannelData(0);
+            const per = Math.max(1, Math.floor(data.length / W));
+            const out = new Float32Array(W);
+            let gmax = 0;
+            for (let x = 0; x < W; x++) {
+                const s = x * per, e = Math.min(data.length, s + per);
+                const step = Math.max(1, Math.floor((e - s) / 64));
+                let mx = 0;
+                for (let i = s; i < e; i += step) { const v = Math.abs(data[i]); if (v > mx) mx = v; }
+                out[x] = mx;
+                if (mx > gmax) gmax = mx;
+            }
+            if (gmax > 0) for (let x = 0; x < W; x++) out[x] /= gmax;
+            return out;
+        }
+
+        function drawWaveform() {
+            if (!loaded) return;
+            const W = wf.clientWidth, H = wf.clientHeight;
+            if (!W) return;
+            const dpr = window.devicePixelRatio || 1;
+            wf.width = Math.floor(W * dpr);
+            wf.height = Math.floor(H * dpr);
+            const c = wf.getContext('2d');
+            c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (!peaks || peaksW !== W) { peaks = computePeaks(loaded.buffer, W); peaksW = W; }
+            const dur = loaded.buffer.duration;
+            const x0 = sel.start / dur * W, x1 = sel.end / dur * W;
+
+            c.fillStyle = '#11111b';
+            c.fillRect(0, 0, W, H);
+            c.fillStyle = 'rgba(137,180,250,0.18)';
+            c.fillRect(x0, 0, Math.max(1, x1 - x0), H);
+            for (let x = 0; x < W; x++) {
+                const h = Math.max(1, peaks[x] * H * 0.9);
+                c.fillStyle = (x >= x0 && x <= x1) ? '#89b4fa' : '#585b70';
+                c.fillRect(x, (H - h) / 2, 1, h);
+            }
+            c.fillStyle = '#f9e2af';
+            c.fillRect(x0, 0, 2, H);
+            c.fillRect(Math.max(0, x1 - 2), 0, 2, H);
+            if (audioPlayer.currentTime > 0) {
+                c.fillStyle = '#a6e3a1';
+                c.fillRect(audioPlayer.currentTime / dur * W, 0, 2, H);
+            }
+            const sA = fmt(sel.start), sB = fmt(sel.end), sLen = (sel.end - sel.start).toFixed(1), sTot = fmt(dur);
+            setText('segInfo', () => tr('segInfo', sA, sB, sLen, sTot));
+        }
+
+        function xToTime(clientX) {
+            const r = wf.getBoundingClientRect();
+            const x = Math.max(0, Math.min(r.width, clientX - r.left));
+            return x / r.width * loaded.buffer.duration;
+        }
+
+        let dragStartT = null, dragMoved = false;
+        wf.addEventListener('pointerdown', (e) => {
+            if (!loaded) return;
+            wf.setPointerCapture(e.pointerId);
+            dragStartT = xToTime(e.clientX);
+            dragMoved = false;
+        });
+        wf.addEventListener('pointermove', (e) => {
+            if (dragStartT === null || !loaded) return;
+            const t = xToTime(e.clientX);
+            if (Math.abs(t - dragStartT) < 0.3 && !dragMoved) return;
+            dragMoved = true;
+            let a = Math.min(dragStartT, t), b = Math.max(dragStartT, t);
+            if (b - a > MAX_SEG) { if (t > dragStartT) b = a + MAX_SEG; else a = b - MAX_SEG; }
+            sel = { start: a, end: b };
+            drawWaveform();
+        });
+        wf.addEventListener('pointerup', (e) => {
+            if (dragStartT === null) return;
+            if (!dragMoved && loaded) { audioPlayer.currentTime = xToTime(e.clientX); drawWaveform(); } // bấm đơn = tua tới
+            dragStartT = null;
+        });
+
+        function showSegmentPanel() {
+            document.getElementById('segPanel').classList.add('show');
+            peaks = null;
+            drawWaveform();
+        }
+
+        function setSelStart(t) {
+            const dur = loaded.buffer.duration;
+            sel.start = t;
+            if (sel.end <= sel.start + 1 || sel.end - sel.start > MAX_SEG) sel.end = Math.min(dur, sel.start + 30);
+            drawWaveform();
+        }
+        function setSelEnd(t) {
+            sel.end = t;
+            if (sel.end <= sel.start + 1 || sel.end - sel.start > MAX_SEG) sel.start = Math.max(0, sel.end - 30);
+            drawWaveform();
+        }
+
+        document.getElementById('btnSetStart').addEventListener('click', () => { if (loaded) setSelStart(audioPlayer.currentTime); });
+        document.getElementById('btnSetEnd').addEventListener('click', () => { if (loaded) setSelEnd(audioPlayer.currentTime); });
+
+        document.getElementById('btnSegPlay').addEventListener('click', () => {
+            if (!loaded) return;
+            audioPlayer.currentTime = sel.start;
+            stopAt = sel.end;
+            audioPlayer.play();
+        });
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (stopAt !== null && audioPlayer.currentTime >= stopAt) { audioPlayer.pause(); stopAt = null; }
+        });
+        audioPlayer.addEventListener('play', () => {
+            const loop = () => { if (!audioPlayer.paused) { drawWaveform(); requestAnimationFrame(loop); } };
+            loop();
+        });
+        audioPlayer.addEventListener('seeked', drawWaveform);
+        window.addEventListener('resize', () => { peaks = null; drawWaveform(); });
+
+        // Lấy đoạn đã chọn, đổi về 22.05 kHz đơn kênh (trình duyệt tự lọc khử nhiễu khi đổi tần số)
+        async function resampleSegment(audioBuffer, start, end) {
+            const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            const len = Math.max(0.2, Math.min(end, audioBuffer.duration) - start);
+            const off = new OAC(1, Math.ceil(len * TRX.SR), TRX.SR);
+            const src = off.createBufferSource();
+            src.buffer = audioBuffer;
+            src.connect(off.destination);
+            src.start(0, start, len);
+            const rendered = await off.startRendering();
+            return rendered.getChannelData(0);
+        }
+
+        document.getElementById('btnAnalyze').addEventListener('click', async () => {
+            if (!loaded || analyzing) return;
+            if (!engineReady) { alert(tr('engineNotReady')); return; }
+            analyzing = true;
+            const btn = document.getElementById('btnAnalyze');
+            const status = document.getElementById('segStatus');
+            btn.disabled = true;
+            try {
+                const { start, end } = sel;
+                const x = await resampleSegment(loaded.buffer, start, end);
+                let mx = 0;
+                for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (a > mx) mx = a; }
+                if (mx > 0) for (let i = 0; i < x.length; i++) x[i] *= 0.9 / mx;      // chuẩn hoá âm lượng
+                const res = await TRX.transcribe(x, { dropBass: document.getElementById('dropBass').checked, quantize: document.getElementById('quantize').checked },
+                    (p) => { const pc = Math.round(p * 100); setText('segStatus', () => tr('analyzing', pc)); });
+                const events = res.events;
+                if (events.length === 0) {
+                    setText('segStatus', () => tr('noMelody'));
+                } else {
+                    const bpmN = res.bpm;
+                    loadArrangement(events, `${loaded.name} [${fmt(start)}–${fmt(end)}]`, () => (bpmN ? tr('bpmSuffix', bpmN) : ''));
+                    const foundN = events.length, chordN = groupEvents(events).filter(g => g.notes.length > 1).length;
+                    setText('segStatus', () => tr('found', foundN, chordN, bpmN));
+                }
+            } catch (err) {
+                setText('segStatus', () => tr('analyzeErr', err.message));
+            } finally {
+                analyzing = false;
+                btn.disabled = false;
+            }
+        });
+
+        // =====================================================================
+        // PHẦN 7: CHỌN FILE
+        // =====================================================================
+        function parseNoteToken(token) {
+            const m = /^([A-G])(#|B)?(\d)$/.exec(token);
+            if (!m) return null;
+            const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]];
+            const acc = m[2] === '#' ? 1 : (m[2] === 'B' ? -1 : 0);
+            const midi = 12 * (parseInt(m[3], 10) + 1) + base + acc;
+            return (midi >= FIRST_MIDI && midi <= LAST_MIDI) ? midi : null;
+        }
+
+        // Đọc file chữ: tự nhận UTF-8 / UTF-16 (Notepad hay lưu kiểu "Unicode" = UTF-16)
+        function decodeTextFile(buf) {
+            const u8 = new Uint8Array(buf);
+            if (u8[0] === 0xFF && u8[1] === 0xFE) return new TextDecoder('utf-16le').decode(u8);
+            if (u8[0] === 0xFE && u8[1] === 0xFF) return new TextDecoder('utf-16be').decode(u8);
+            return new TextDecoder('utf-8').decode(u8);
+        }
+
+        // Định dạng .txt: các nốt cách nhau bằng dấu cách.
+        //   E5        = nốt E5, dài 1 phách
+        //   E5:0.25   = dài 0.25 phách (nốt móc kép nếu 1 phách = nốt đen); cũng viết được E5:1/4
+        //   R:0.5     = nghỉ 0.5 phách
+        //   BPM=100   = tốc độ (số phách mỗi phút); mặc định 120
+        function parseScoreText(raw) {
+            const text = raw.replace(/^\uFEFF/, '').normalize('NFKC')
+                .replace(/[\u200B-\u200D\u2060\u00AD]/g, '')
+                .replace(/♯/g, '#').replace(/♭/g, 'b').toUpperCase();
+            const tokens = text.split(/[\s,;|→]+/).filter(t => t.length > 0);
+            let bpm = 120;
+            const events = [], bad = [];
+            let cursor = 0;
+            for (const token of tokens) {
+                const bm = /^BPM=(\d+(\.\d+)?)$/.exec(token);
+                if (bm) { bpm = Math.max(30, Math.min(300, parseFloat(bm[1]))); continue; }
+                const parts = token.split(':');
+                let beats = 1;
+                if (parts.length > 1) {
+                    const d = parts[1];
+                    if (d.includes('/')) { const [x, y] = d.split('/').map(Number); beats = x / y; }
+                    else beats = parseFloat(d);
+                }
+                if (parts.length > 2 || !(beats > 0 && beats <= 16)) { bad.push(token); continue; }
+                const secs = beats * 60 / bpm;
+                if (parts[0] === 'R' || parts[0] === '-' || parts[0] === 'REST') { cursor += secs; continue; }
+                const chord = parts[0].split('+').map(parseNoteToken);      // C4+E4+G4 = hợp âm
+                if (chord.some(m => m === null)) { bad.push(token); continue; }
+                for (const midi of chord) events.push({ midi, start: cursor, dur: secs, vel: 0.75 });
+                cursor += secs;
+            }
+            return { events, bad, bpm };
+        }
+
+        // Dùng chung cho file .txt và ô dán nốt
+        function loadScoreFromText(raw, label, fileSize) {
+            document.getElementById('segPanel').classList.remove('show');
+            const { events, bad, bpm } = parseScoreText(raw);
+            if (!engineReady) {
+                alert(tr('alertEngine'));
+                return;
+            }
+            if (events.length === 0) {
+                if (bad.length === 0) {
+                    alert(fileSize === 0 ? tr('alertEmpty') : tr('alertNoNotes'));
+                } else {
+                    const first = bad[0];
+                    const codes = Array.from(first).slice(0, 8).map(c => c.charCodeAt(0).toString(16)).join(' ');
+                    alert(tr('alertBad', bad.slice(0, 5).join(' | '), codes));
+                }
+                return;
+            }
+            loadArrangement(events, label, () => tr('bpmSuffix', bpm) + (bad.length ? tr('skipSuffix', bad.length, bad.slice(0, 3).join(', ')) : ''));
+
+        }
+
+        document.getElementById('btnLoadText').addEventListener('click', () => {
+            loadScoreFromText(document.getElementById('notesText').value, () => tr('pastedLabel'), null);
+        });
+
+        document.getElementById('fileUpload').addEventListener('change', async function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const songTitle = document.getElementById('songTitle');
+            const lowerName = file.name.toLowerCase();
+
+            if (file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|mp4|ogg|oga|opus|flac|webm)$/.test(lowerName)) {
+                if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
+                audioPlayer.src = URL.createObjectURL(file);
+                audioPlayer.style.display = 'block';
+                setText('songTitle', () => tr('reading', file.name));
+                try {
+                    const ctx = ensureAudioContext();
+                    const arrayBuffer = await file.arrayBuffer();
+                    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                    loaded = { buffer: audioBuffer, name: file.name };
+                    sel = { start: 0, end: Math.min(audioBuffer.duration, 30) };
+                    setText('segStatus', '');
+                    const durStr = fmt(audioBuffer.duration);
+                    setText('songTitle', () => tr('loadedAudio', file.name, durStr));
+                    showSegmentPanel();
+                } catch (err) {
+                    const isM4a = /\.(m4a|aac|mp4)$/.test(lowerName);
+                    setText('songTitle', () => tr('decodeErr', err.message) + (isM4a ? tr('m4aHint') : ''));
+                }
+            } else if (lowerName.endsWith('.txt')) {
+                try {
+                    loadScoreFromText(decodeTextFile(await file.arrayBuffer()), file.name, file.size);
+                } catch (err) {
+                    setText('songTitle', () => tr('txtErr', err.message));
+                }
+            }
+            e.target.value = '';
+        });
+
+        // ----- Khởi động: chữ giao diện, âm lượng, hiện tên nốt, trả phím về cho đàn -----
+        initStaticI18n();
+        document.getElementById('practiceSel').addEventListener('change', (e) => {
+            practiceMode = e.target.value;
+            if (arrEvents.length) applyPractice();
+        });
+        setText('songTitle', () => tr('defaultTitle'));
+        updateDemoBtn();
+
+        document.getElementById('volume').addEventListener('input', (e) => {
+            masterVol = e.target.value / 100;
+            if (masterGain) masterGain.gain.value = masterVol;
+        });
+        document.getElementById('showNames').addEventListener('change', (e) => {
+            document.getElementById('piano').classList.toggle('hide-names', !e.target.checked);
+        });
+        ['speedSel', 'rhythmOn', 'showNames', 'volume', 'practiceSel', 'dropBass', 'quantize'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => e.target.blur());
+        });
+
+        if (Module.calledRun) initCppEngine();
+
+        // Bắt đầu tải âm thanh piano thật ngay khi mở trang
+        loadPianoSamples();
+    </script>
+</body>
+</html>

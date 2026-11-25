@@ -2,8 +2,8 @@
 #include <vector>
 #include <emscripten/emscripten.h>
 
-// Danh sách bài hát hiện tại (mặc định là Twinkle Twinkle Little Star)
-std::vector<int> currentSong = {60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60};
+// Danh sách bài hát hiện tại (mặc định là Orange)
+std::vector<int> currentSong = {60, 62, 64, 65, 67, 69, 71, 72}; // Ví dụ: C4, D4, E4, F4, G4, A4, B4, C5
 int currentStep = 0;
 int score = 0;
 
